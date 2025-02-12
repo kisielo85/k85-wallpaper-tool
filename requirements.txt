@@ -1,0 +1,3 @@
+Pyqt6
+screeninfo
+pillow
