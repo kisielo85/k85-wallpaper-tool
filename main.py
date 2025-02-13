@@ -1,5 +1,5 @@
 import sys
-from PyQt6.QtWidgets import QDialog, QApplication
+from PyQt6.QtWidgets import QDialog, QApplication, QFileDialog
 from ui_files.scale_setup import Ui_Dialog as Scale_Dialog
 from ui_files.gap_setup import Ui_Dialog as Gap_Dialog
 from ui_files.main_dialog import Ui_Dialog as Main_Dialog
@@ -13,15 +13,15 @@ class MainUI(QDialog):
         self.ui.setupUi(self)
 
         self.ui.btn_setup.clicked.connect(self.start_setup)
+        self.ui.btn_set_wallpaper.clicked.connect(self.set_wallpaper)
 
         if w.load_data():
             self.ui.btn_set_wallpaper.setEnabled(True)
             self.ui.label_info.setText("previous config\nloaded")
-            print(w.data)
-            w.modify_img()
 
     # runs every configuration in order
     def start_setup(self):
+        w.load_monitors()
         for screens in w.data['setup_order']:
             for i in range(2):
                 dialog = ScaleUI(screens) if i == 0 else GapUI(screens)
@@ -31,17 +31,24 @@ class MainUI(QDialog):
                     self.ui.btn_save_png.setEnabled(False)
                     self.ui.label_info.setText("setup canceled\nclick again to retry")
                     return
-        
+
+        w.calculate_img_conversion()
         if w.verify_data(w.data):
             w.save_data()
             self.ui.btn_set_wallpaper.setEnabled(True)
             self.ui.label_info.setText("configuration\nsaved")
-            
+
         else:
             self.ui.label_info.setText("error\nconfig invalid")
-        
-        
-        
+
+    def set_wallpaper(self):
+        file_dialog = QFileDialog(self)
+        file_dialog.setFileMode(QFileDialog.FileMode.AnyFile)
+        file_dialog.setViewMode(QFileDialog.ViewMode.Detail)
+        file_dialog.setNameFilters(["(*.jpg *.jpeg *.png)"])
+        if file_dialog.exec():
+            file_path = file_dialog.selectedFiles()[0]
+            w.set_wallpaper(w.convert_wallpaper(file_path))
 
 
 class ScaleUI(QDialog):

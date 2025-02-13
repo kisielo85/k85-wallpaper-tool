@@ -3,10 +3,7 @@ import os
 from PIL import Image, ImageDraw, ImageFont
 from screeninfo import get_monitors
 import math
-import json
-from dataclasses import dataclass, asdict
-from typing import Optional
-from pprint import pprint
+from dataclasses import dataclass
 import pickle
 
 
@@ -185,6 +182,7 @@ def draw_scale_setting(s, lines=False):
     return lines
 
 
+# process and save data from ScaleUI
 def calculate_scale(s, lines):
     global data
     global temp_middle
@@ -243,6 +241,7 @@ def draw_gap_setting(s, gap=0):
     return gap
 
 
+# save data from GapUI
 def save_gap(s, gap):
     global data
     m1 = data['monitors'][s[0]]
@@ -255,13 +254,19 @@ def save_gap(s, gap):
     m1.gap = gap
 
     if m1.pos.x < m2.pos.x:
-        m1.relative_x = -gap*2 - m1.width * m1.scale
+        m1.relative_x = -gap * 2 - m1.width * m1.scale
     else:
-        m1.relative_x = m2.width * m2.scale + gap*2
+        m1.relative_x = m2.width * m2.scale + gap * 2
 
 
 def verify_data(d):
-    if not d['canvas_size'] or not d['setup_order'] or not d['monitors']:
+    if (
+        'canvas_size' not in d
+        or 'setup_order' not in d
+        or 'monitors' not in d
+        or 'img_rectangles' not in d
+        or 'img_size' not in d
+    ):
         return False
 
     for m in d['monitors']:
@@ -291,9 +296,10 @@ def save_data():
         pickle.dump(data, f)
 
 
-def modify_img():
+# calculates what areas of the original image
+# should be copied and pasted onto the wallpaper
+def calculate_img_conversion():
     global data
-    
     rect = {}
     min_x = min_y = 0
 
@@ -306,7 +312,7 @@ def modify_img():
             }
             break
 
-    # calculate what areas in original image should be used
+    # calculate screen positions and sizes
     for o in data['setup_order']:
         m1 = data['monitors'][o[0]]
         m2 = data['monitors'][o[1]]
@@ -326,7 +332,7 @@ def modify_img():
                 int(pos[1] + m1.height * m1.scale),
             ],
         }
-    
+
     # convert cords and get desired image size
     max_x = max_y = 0
     for r in rect:
@@ -335,21 +341,52 @@ def modify_img():
             rect[r][point][1] -= min_y
             max_x = max(max_x, rect[r][point][0])
             max_y = max(max_y, rect[r][point][1])
-    
-    source_img = Image.open("test.png")
-    base_img=get_base_image()
+
+    data['img_rectangles'] = rect
+    data['img_size'] = [max_x, max_y]
+
+
+# converts image to wallpaper
+def convert_wallpaper(img):
+    calculate_img_conversion()
+    global data
+    rect = data['img_rectangles']
+    save_data()
+    source_img = Image.open(img)
+
+    img_x, img_y = source_img.size
+    screen_x, screen_y = data['img_size'][0], data['img_size'][1]
+
+    # check aspect ratio, resize and crop to desired resolution
+    if img_x / img_y < screen_x / screen_y:
+        source_img = source_img.resize((screen_x, int(img_y / img_x * screen_x)), 1)
+        crop_px = (source_img.height - screen_y) // 2
+        source_img = source_img.crop(
+            (0, crop_px, source_img.width, source_img.height - crop_px)
+        )
+    else:
+        source_img = source_img.resize((int(img_x / img_y * screen_y), screen_y), 1)
+        crop_px = (source_img.width - screen_x) // 2
+        source_img = source_img.crop(
+            (crop_px, 0, source_img.width - crop_px, source_img.height)
+        )
+
+    # creating new .png
+    base_img = get_base_image()
     for r in rect:
-        crop_area = (rect[r]['from'][0], rect[r]['from'][1], rect[r]['to'][0], rect[r]['to'][1])
-        cropped = source_img.crop(crop_area)
+        crop_area = (
+            rect[r]['from'][0],
+            rect[r]['from'][1],
+            rect[r]['to'][0],
+            rect[r]['to'][1],
+        )
+        m = data['monitors'][r]
 
-        m=data['monitors'][r]
-        target_size=(m.width,m.height)
-        resized = cropped.resize(target_size, Image.LANCZOS)
+        # copy area from source image and paste onto new wallpaper
+        screen_img = source_img.crop(crop_area).resize(
+            (m.width, m.height), Image.LANCZOS
+        )
+        base_img.paste(screen_img, (m.pos.x, m.pos.y))
 
-        paste_position = (m.pos.x, m.pos.y)
-        base_img.paste(resized, paste_position)
-    
-    base_img.save("output.jpg")
-
-    print(rect)
-        
+    base_img.save("wallpaper.png")
+    return "wallpaper.png"
