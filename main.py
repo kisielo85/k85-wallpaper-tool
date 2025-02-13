@@ -14,14 +14,34 @@ class MainUI(QDialog):
 
         self.ui.btn_setup.clicked.connect(self.start_setup)
 
-    def start_setup(self):
-        w.load_monitors()
-        for screens in w.data['setup_order']:
-            dialog = ScaleUI(screens)
-            dialog.exec()
+        if w.load_data():
+            self.ui.btn_set_wallpaper.setEnabled(True)
+            self.ui.label_info.setText("previous config\nloaded")
+            print(w.data)
+            w.modify_img()
 
-            dialog = GapUI(screens)
-            dialog.exec()
+    # runs every configuration in order
+    def start_setup(self):
+        for screens in w.data['setup_order']:
+            for i in range(2):
+                dialog = ScaleUI(screens) if i == 0 else GapUI(screens)
+
+                if not dialog.exec():
+                    self.ui.btn_set_wallpaper.setEnabled(False)
+                    self.ui.btn_save_png.setEnabled(False)
+                    self.ui.label_info.setText("setup canceled\nclick again to retry")
+                    return
+        
+        if w.verify_data(w.data):
+            w.save_data()
+            self.ui.btn_set_wallpaper.setEnabled(True)
+            self.ui.label_info.setText("configuration\nsaved")
+            
+        else:
+            self.ui.label_info.setText("error\nconfig invalid")
+        
+        
+        
 
 
 class ScaleUI(QDialog):
@@ -65,8 +85,7 @@ class ScaleUI(QDialog):
 
     def next(self):
         w.calculate_scale(self.screens, self.lines)
-        # save data
-        self.close()
+        self.accept()
 
 
 class GapUI(QDialog):
@@ -94,8 +113,8 @@ class GapUI(QDialog):
         self.ui.label.setText(f'{self.px_step}px')
 
     def next(self):
-        # save data
-        self.close()
+        w.save_gap(self.screens, self.gap)
+        self.accept()
 
 
 if __name__ == '__main__':

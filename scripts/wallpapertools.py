@@ -3,9 +3,11 @@ import os
 from PIL import Image, ImageDraw, ImageFont
 from screeninfo import get_monitors
 import math
-from dataclasses import dataclass
+import json
+from dataclasses import dataclass, asdict
 from typing import Optional
 from pprint import pprint
+import pickle
 
 
 base_img = False
@@ -36,6 +38,7 @@ class Monitor:
     gap: int = 0
     scale: float = 1.0
     relative_y: int = 0
+    relative_x: int = 0
 
 
 # returns id of the closest display with/without a bind
@@ -56,6 +59,7 @@ def get_closest(id, bind=True):
     return closest_id
 
 
+# saves all important stuff to data variable
 def load_monitors():
     global data
     data = {'monitors': []}
@@ -194,12 +198,13 @@ def calculate_scale(s, lines):
         lines[2], lines[3] = lines[3], lines[2]
 
     m1.scale = m2.scale * (lines[3] - lines[1]) / (lines[2] - lines[0])
-    m1.relative_y = int(lines[1] - lines[0] * m1.scale)
+    m1.relative_y = lines[1] - lines[0] * m1.scale
 
     temp_middle[0] = (lines[0] + lines[2]) // 2
     temp_middle[1] = (lines[1] + lines[3]) // 2
 
 
+# draws diagonal lines, used for meassuring gaps between screens
 def draw_gap_setting(s, gap=0):
     global data
     img = get_base_image()
@@ -236,3 +241,115 @@ def draw_gap_setting(s, gap=0):
         print('error while setting wallpaper')
 
     return gap
+
+
+def save_gap(s, gap):
+    global data
+    m1 = data['monitors'][s[0]]
+    m2 = data['monitors'][s[1]]
+
+    # make sure m1 is the one being set
+    if m2.bind_to == m1.id:
+        m1, m2 = m2, m1
+
+    m1.gap = gap
+
+    if m1.pos.x < m2.pos.x:
+        m1.relative_x = -gap*2 - m1.width * m1.scale
+    else:
+        m1.relative_x = m2.width * m2.scale + gap*2
+
+
+def verify_data(d):
+    if not d['canvas_size'] or not d['setup_order'] or not d['monitors']:
+        return False
+
+    for m in d['monitors']:
+        if not m.has_bind:
+            return False
+
+    return True
+
+
+def load_data():
+    global data
+    try:
+        with open("data.pkl", "rb") as f:
+            d = pickle.load(f)
+        if verify_data(d):
+            data = d
+            return True
+    except:
+        pass
+
+    load_monitors()
+    return False
+
+
+def save_data():
+    with open("data.pkl", "wb") as f:
+        pickle.dump(data, f)
+
+
+def modify_img():
+    global data
+    
+    rect = {}
+    min_x = min_y = 0
+
+    # get primary monitor first, at cords 0, 0
+    for m in data['monitors']:
+        if m.primary:
+            rect[m.id] = {
+                'from': [0, 0],
+                'to': [m.width, m.height],
+            }
+            break
+
+    # calculate what areas in original image should be used
+    for o in data['setup_order']:
+        m1 = data['monitors'][o[0]]
+        m2 = data['monitors'][o[1]]
+        if m2.bind_to == m1.id:
+            m1, m2 = m2, m1
+
+        pos = rect[m2.id]['from'].copy()
+        pos[0] += m1.relative_x
+        pos[1] += m1.relative_y
+        min_x = min(min_x, int(pos[0]))
+        min_y = min(min_y, int(pos[1]))
+
+        rect[m1.id] = {
+            'from': [int(pos[0]), int(pos[1])],
+            'to': [
+                int(pos[0] + m1.width * m1.scale),
+                int(pos[1] + m1.height * m1.scale),
+            ],
+        }
+    
+    # convert cords and get desired image size
+    max_x = max_y = 0
+    for r in rect:
+        for point in rect[r]:
+            rect[r][point][0] -= min_x
+            rect[r][point][1] -= min_y
+            max_x = max(max_x, rect[r][point][0])
+            max_y = max(max_y, rect[r][point][1])
+    
+    source_img = Image.open("test.png")
+    base_img=get_base_image()
+    for r in rect:
+        crop_area = (rect[r]['from'][0], rect[r]['from'][1], rect[r]['to'][0], rect[r]['to'][1])
+        cropped = source_img.crop(crop_area)
+
+        m=data['monitors'][r]
+        target_size=(m.width,m.height)
+        resized = cropped.resize(target_size, Image.LANCZOS)
+
+        paste_position = (m.pos.x, m.pos.y)
+        base_img.paste(resized, paste_position)
+    
+    base_img.save("output.jpg")
+
+    print(rect)
+        
