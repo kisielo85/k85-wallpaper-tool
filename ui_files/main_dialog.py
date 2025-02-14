@@ -12,20 +12,16 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
-        Dialog.resize(253, 133)
+        Dialog.resize(230, 111)
         self.btn_setup = QtWidgets.QPushButton(parent=Dialog)
-        self.btn_setup.setGeometry(QtCore.QRect(30, 30, 76, 23))
+        self.btn_setup.setGeometry(QtCore.QRect(20, 70, 91, 23))
         self.btn_setup.setObjectName("btn_setup")
         self.btn_set_wallpaper = QtWidgets.QPushButton(parent=Dialog)
         self.btn_set_wallpaper.setEnabled(False)
-        self.btn_set_wallpaper.setGeometry(QtCore.QRect(30, 80, 75, 23))
+        self.btn_set_wallpaper.setGeometry(QtCore.QRect(120, 70, 91, 23))
         self.btn_set_wallpaper.setObjectName("btn_set_wallpaper")
-        self.btn_save_png = QtWidgets.QPushButton(parent=Dialog)
-        self.btn_save_png.setEnabled(False)
-        self.btn_save_png.setGeometry(QtCore.QRect(140, 80, 75, 23))
-        self.btn_save_png.setObjectName("btn_save_png")
         self.label_info = QtWidgets.QLabel(parent=Dialog)
-        self.label_info.setGeometry(QtCore.QRect(140, 20, 101, 41))
+        self.label_info.setGeometry(QtCore.QRect(20, 10, 191, 41))
         self.label_info.setObjectName("label_info")
 
         self.retranslateUi(Dialog)
@@ -36,9 +32,7 @@ class Ui_Dialog(object):
         Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
         self.btn_setup.setText(_translate("Dialog", "setup"))
         self.btn_set_wallpaper.setText(_translate("Dialog", "set wallapper"))
-        self.btn_save_png.setText(_translate("Dialog", "save .png"))
-        self.label_info.setText(_translate("Dialog", "click setup to begin\n"
-"configuration"))
+        self.label_info.setText(_translate("Dialog", "click setup to begin configuration"))
 
 
 if __name__ == "__main__":

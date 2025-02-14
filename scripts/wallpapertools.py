@@ -173,8 +173,8 @@ def draw_scale_setting(s, lines=False):
 
     # set new image
     try:
-        img.save('amo.png')
-        set_wallpaper('amo.png')
+        img.save('temp.png')
+        set_wallpaper('temp.png')
         print('wallpaper set')
     except:
         print('error while setting wallpaper')
@@ -232,8 +232,8 @@ def draw_gap_setting(s, gap=0):
         draw.line([(x1, y1), (x2, y2)], width=3, fill='blue' if 0 < i < 3 else 'red')
 
     try:
-        img.save('amo.png')
-        set_wallpaper('amo.png')
+        img.save('temp.png')
+        set_wallpaper('temp.png')
         print('wallpaper set')
     except:
         print('error while setting wallpaper')
@@ -322,14 +322,14 @@ def calculate_img_conversion():
         pos = rect[m2.id]['from'].copy()
         pos[0] += m1.relative_x
         pos[1] += m1.relative_y
-        min_x = min(min_x, int(pos[0]))
-        min_y = min(min_y, int(pos[1]))
+        min_x = min(min_x, pos[0])
+        min_y = min(min_y, pos[1])
 
         rect[m1.id] = {
-            'from': [int(pos[0]), int(pos[1])],
+            'from': [pos[0], pos[1]],
             'to': [
-                int(pos[0] + m1.width * m1.scale),
-                int(pos[1] + m1.height * m1.scale),
+                pos[0] + m1.width * m1.scale,
+                pos[1] + m1.height * m1.scale,
             ],
         }
 
@@ -357,30 +357,26 @@ def convert_wallpaper(img):
     img_x, img_y = source_img.size
     screen_x, screen_y = data['img_size'][0], data['img_size'][1]
 
-    # check aspect ratio, resize and crop to desired resolution
+    # check aspect ratio, crop so it's the same as in desired resolution
     if img_x / img_y < screen_x / screen_y:
-        source_img = source_img.resize((screen_x, int(img_y / img_x * screen_x)), 1)
-        crop_px = (source_img.height - screen_y) // 2
-        source_img = source_img.crop(
-            (0, crop_px, source_img.width, source_img.height - crop_px)
-        )
+        img_scale = img_x / screen_x
+        crop_px = (img_y - screen_y * img_scale) // 2
+        source_img = source_img.crop((0, crop_px, img_x, img_y - crop_px))
     else:
-        source_img = source_img.resize((int(img_x / img_y * screen_y), screen_y), 1)
-        crop_px = (source_img.width - screen_x) // 2
-        source_img = source_img.crop(
-            (crop_px, 0, source_img.width - crop_px, source_img.height)
-        )
-
+        img_scale = img_y / screen_y
+        crop_px = (img_x - screen_x * img_scale) // 2
+        source_img = source_img.crop((crop_px, 0, img_x - crop_px, img_y))
+    
     # creating new .png
     base_img = get_base_image()
-    for r in rect:
+    for id, r in rect.items():
         crop_area = (
-            rect[r]['from'][0],
-            rect[r]['from'][1],
-            rect[r]['to'][0],
-            rect[r]['to'][1],
+            r['from'][0] * img_scale,
+            r['from'][1] * img_scale,
+            r['to'][0] * img_scale,
+            r['to'][1] * img_scale,
         )
-        m = data['monitors'][r]
+        m = data['monitors'][id]
 
         # copy area from source image and paste onto new wallpaper
         screen_img = source_img.crop(crop_area).resize(

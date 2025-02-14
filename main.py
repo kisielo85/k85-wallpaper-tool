@@ -17,7 +17,10 @@ class MainUI(QDialog):
 
         if w.load_data():
             self.ui.btn_set_wallpaper.setEnabled(True)
-            self.ui.label_info.setText("previous config\nloaded")
+            self.ui.label_info.setText(f"previous config loaded\n{self.resolution()}")
+
+    def resolution(self):
+        return f"desired resolution: {int(w.data['img_size'][0]+1)} x {int(w.data['img_size'][1]+1)}px"
 
     # runs every configuration in order
     def start_setup(self):
@@ -28,7 +31,6 @@ class MainUI(QDialog):
 
                 if not dialog.exec():
                     self.ui.btn_set_wallpaper.setEnabled(False)
-                    self.ui.btn_save_png.setEnabled(False)
                     self.ui.label_info.setText("setup canceled\nclick again to retry")
                     return
 
@@ -36,10 +38,10 @@ class MainUI(QDialog):
         if w.verify_data(w.data):
             w.save_data()
             self.ui.btn_set_wallpaper.setEnabled(True)
-            self.ui.label_info.setText("configuration\nsaved")
+            self.ui.label_info.setText(f"configuration saved\n{self.resolution()}")
 
         else:
-            self.ui.label_info.setText("error\nconfig invalid")
+            self.ui.label_info.setText("error: config invalid")
 
     def set_wallpaper(self):
         file_dialog = QFileDialog(self)
