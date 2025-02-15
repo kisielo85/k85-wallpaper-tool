@@ -5,6 +5,7 @@ from screeninfo import get_monitors
 import math
 from dataclasses import dataclass
 import pickle
+from sys import platform
 
 
 base_img = False
@@ -138,7 +139,12 @@ def get_base_image():
 
 def set_wallpaper(image_path):
     image_path = os.path.abspath(image_path)
-    ctypes.windll.user32.SystemParametersInfoW(20, 0, image_path, 0x01)
+    print(image_path,platform)
+    if platform == "linux" or platform == "linux2":
+        os.system(f"gsettings set org.gnome.desktop.background picture-uri file://{image_path}")
+        print(f"gsettings set org.gnome.desktop.background picture-uri file://{image_path}")
+    elif platform == "win32":
+        ctypes.windll.user32.SystemParametersInfoW(20, 0, image_path, 0x01)
 
 
 # draws red and blue lines, used for getting a scale
