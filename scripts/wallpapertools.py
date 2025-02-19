@@ -98,6 +98,7 @@ def load_monitors():
         m.center.x = m.pos.x + m.width // 2
         m.center.y = m.pos.y + m.height // 2
 
+    data['min_pos'] = (min_x, min_y)
     data['canvas_size'] = (max_x - min_x, max_y - min_y)
     data['setup_order'] = []
 
@@ -139,56 +140,15 @@ def get_base_image():
 
 def set_wallpaper(image_path):
     image_path = os.path.abspath(image_path)
-    print(image_path,platform)
     if platform == "linux" or platform == "linux2":
-        os.system(f"gsettings set org.gnome.desktop.background picture-uri file://{image_path}")
-        print(f"gsettings set org.gnome.desktop.background picture-uri file://{image_path}")
+        os.system(
+            f"gsettings set org.gnome.desktop.background picture-uri file://{image_path}"
+        )
     elif platform == "win32":
         ctypes.windll.user32.SystemParametersInfoW(20, 0, image_path, 0x01)
 
 
-# draws red and blue lines, used for getting a scale
-def draw_scale_setting(s, lines=False):
-    global data
-    img = get_base_image()
-    draw = ImageDraw.Draw(img)
-
-    # default line positions
-    if not lines:
-        lines = [
-            20,
-            20,
-            data['monitors'][s[0]].height - 60,
-            data['monitors'][s[1]].height - 60,
-        ]
-
-    # drawing
-    for i, line_y in enumerate(lines):
-        m = data['monitors'][s[i % 2]]
-        fill = 'blue' if i < 2 else 'red'
-
-        line_from = (m.pos.x, m.pos.y + line_y)
-        line_to = (m.pos_end.x, m.pos.y + line_y)
-
-        draw.line([line_from, line_to], width=3, fill=fill)
-        font = ImageFont.truetype('arial_bold.ttf', 50)
-
-        txt_x = line_from[0] + 15 if i % 2 else line_to[0] - 45
-        txt_y = line_from[1] if i < 2 else line_from[1] - 70
-        draw.text((txt_x, txt_y), str(i % 2 + 1), font=font, fill=fill)
-
-    # set new image
-    try:
-        img.save('temp.png')
-        set_wallpaper('temp.png')
-        print('wallpaper set')
-    except:
-        print('error while setting wallpaper')
-
-    return lines
-
-
-# process and save data from ScaleUI
+# process and save data from scale setup
 def calculate_scale(s, lines):
     global data
     global temp_middle
@@ -208,46 +168,7 @@ def calculate_scale(s, lines):
     temp_middle[1] = (lines[1] + lines[3]) // 2
 
 
-# draws diagonal lines, used for meassuring gaps between screens
-def draw_gap_setting(s, gap=0):
-    global data
-    img = get_base_image()
-    draw = ImageDraw.Draw(img)
-
-    # some funky math for drawing diagonal lines
-    for i in range(4):
-        s_id = i % 2
-        m = data['monitors'][s[s_id]]
-        x1 = x2 = m.pos.x
-        y1 = m.pos.y
-        y2 = m.pos.y + temp_middle[s_id]
-
-        if i < 2:
-            x1 += (-temp_middle[s_id] + gap) * (1 if i == 0 else -1)
-            y2 += -gap - 2
-        else:
-            x1 += (-m.height + temp_middle[s_id] + gap) * (1 if i == 2 else -1)
-            y1 += m.height
-            y2 += gap + 2
-        if s_id == 0:
-            x1 += m.width
-            x2 += m.width - 2
-        else:
-            x2 += 2
-
-        draw.line([(x1, y1), (x2, y2)], width=3, fill='blue' if 0 < i < 3 else 'red')
-
-    try:
-        img.save('temp.png')
-        set_wallpaper('temp.png')
-        print('wallpaper set')
-    except:
-        print('error while setting wallpaper')
-
-    return gap
-
-
-# save data from GapUI
+# save data from gap setup
 def save_gap(s, gap):
     global data
     m1 = data['monitors'][s[0]]
@@ -272,6 +193,7 @@ def verify_data(d):
         or 'monitors' not in d
         or 'img_rectangles' not in d
         or 'img_size' not in d
+        or 'min_pos' not in d
     ):
         return False
 
@@ -372,7 +294,7 @@ def convert_wallpaper(img):
         img_scale = img_y / screen_y
         crop_px = (img_x - screen_x * img_scale) // 2
         source_img = source_img.crop((crop_px, 0, img_x - crop_px, img_y))
-    
+
     # creating new .png
     base_img = get_base_image()
     for id, r in rect.items():
