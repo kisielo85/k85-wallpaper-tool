@@ -77,6 +77,7 @@ def get_scale(data, screens):
 
     def close(canceled=False):
         nonlocal out
+        listener.stop()
         if canceled:
             out = False
             root.destroy()
@@ -180,6 +181,7 @@ def get_gap(data, s):
 
     def close(canceled=False):
         nonlocal gap
+        listener.stop()
         if canceled:
             gap = False
         root.destroy()
