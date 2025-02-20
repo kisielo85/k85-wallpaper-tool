@@ -1,4 +1,5 @@
 import tkinter as tk
+from pynput import keyboard
 
 temp_middle = [0, 0]
 
@@ -11,7 +12,6 @@ def get_canvas_base(data):
     root = tk.Tk()
     root.geometry(f"{canvas_x}x{canvas_y}+{min_x}+{min_y}")
     root.overrideredirect(True)
-    root.wm_attributes("-transparentcolor", "gray")
 
     canvas = tk.Canvas(
         root, width=canvas_x, height=canvas_y, bg="black", highlightthickness=0
@@ -104,10 +104,20 @@ def get_scale(data, screens):
         canvas.tag_bind(line, "<Enter>", lambda event: set_cursor("fleur"))
         canvas.tag_bind(line, "<Leave>", lambda event: set_cursor("arrow"))
 
-    root.bind("<Return>", lambda e: close())
-    root.bind("<Escape>", lambda e: close(canceled=True))
-    root.bind("<Up>", lambda e: move_line(-1))
-    root.bind("<Down>", lambda e: move_line(1))
+    def on_press(key):
+        match key:
+            case keyboard.Key.left | keyboard.Key.down:
+                move_line(1)
+            case keyboard.Key.right | keyboard.Key.up:
+                move_line(-1)
+            case keyboard.Key.esc:
+                close(canceled=True)
+            case keyboard.Key.enter:
+                close()
+
+    listener = keyboard.Listener(on_press=on_press)
+    listener.start()
+
     root.bind("<ButtonPress-1>", on_mouse_press)
     root.bind("<B1-Motion>", on_mouse_drag)
     root.bind("<ButtonRelease-1>", on_mouse_release)
@@ -174,15 +184,23 @@ def get_gap(data, s):
             gap = False
         root.destroy()
 
+    def on_press(key):
+        match key:
+            case keyboard.Key.left | keyboard.Key.down:
+                move_gap(-1)
+            case keyboard.Key.right | keyboard.Key.up:
+                move_gap(1)
+            case keyboard.Key.esc:
+                close(canceled=True)
+            case keyboard.Key.enter:
+                close()
+
+    listener = keyboard.Listener(on_press=on_press)
+    listener.start()
+
     root.bind("<ButtonPress-1>", on_mouse_press)
     root.bind("<B1-Motion>", on_mouse_drag)
     root.bind("<ButtonRelease-1>", lambda e: update_lines())
-    root.bind("<Up>", lambda e: move_gap(1))
-    root.bind("<Down>", lambda e: move_gap(-1))
-    root.bind("<Left>", lambda e: move_gap(-1))
-    root.bind("<Right>", lambda e: move_gap(1))
-    root.bind("<Return>", lambda e: close())
-    root.bind("<Escape>", lambda e: close(canceled=True))
     canvas.config(cursor="fleur")
     update_lines()
 

@@ -1,3 +1,4 @@
 Pyqt6
 screeninfo
 pillow
+pynput
