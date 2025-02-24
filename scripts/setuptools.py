@@ -8,11 +8,11 @@ temp_middle = [0, 0]
 
 
 # prepare canvas
-def get_canvas_base(data, mode="scale"):
+def get_canvas_base(data, master, mode="scale"):
     canvas_x, canvas_y = data['canvas_size']
     min_x, min_y = data['min_pos']
 
-    root = tk.Tk()
+    root = tk.Toplevel(master)
     root.geometry(f"{canvas_x}x{canvas_y}+{min_x}+{min_y}")
     root.overrideredirect(True)
     if platform == "win32":
@@ -23,12 +23,11 @@ def get_canvas_base(data, mode="scale"):
     )
 
     # draw instructions on every screen
-    img_path = "assets/scale_img.png"  # if mode == "scale" else "assets/gap_img.png"
+    img_path = "assets/scale_img.png" if mode == "scale" else "assets/gap_img.png"
 
     canvas.images = []
     canvas.image_ids = []
     for m in data['monitors']:
-        break
         img = Image.open(img_path)
         x, y = img.size
         new_x = int(m.width * 0.3)
@@ -49,10 +48,10 @@ def get_canvas_base(data, mode="scale"):
 
 
 # UI for getting display scale
-def get_scale(data, screens):
+def get_scale(data, screens, master):
     out = False
     dragging_line = False
-    root, canvas = get_canvas_base(data, "scale")
+    root, canvas = get_canvas_base(data, master, "scale")
 
     # draw horizontal lines
     lines = []
@@ -148,17 +147,17 @@ def get_scale(data, screens):
     root.bind("<ButtonPress-1>", on_mouse_press)
     root.bind("<B1-Motion>", on_mouse_drag)
     root.bind("<ButtonRelease-1>", on_mouse_release)
-    root.mainloop()
+    master.wait_window(root)
 
     return out
 
 
 # UI for getting space between monitors
-def get_gap(data, s):
+def get_gap(data, s, master):
     drag_from = -1
     multiplier = 0
     middle = data['monitors'][s[0]].pos_end.x
-    root, canvas = get_canvas_base(data, "gap")
+    root, canvas = get_canvas_base(data, master, "gap")
 
     # draw diagonal lines
     gap = 20
@@ -231,8 +230,8 @@ def get_gap(data, s):
     root.bind("<ButtonRelease-1>", lambda e: update_lines())
     canvas.config(cursor="fleur")
     update_lines()
+    master.wait_window(root)
 
-    root.mainloop()
     if gap != False:
         return gap + 2
     else:
