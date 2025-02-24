@@ -29,7 +29,7 @@ class Ui_Dialog(object):
 
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
+        Dialog.setWindowTitle(_translate("Dialog", "k85 wallpaper tool"))
         self.btn_setup.setText(_translate("Dialog", "setup"))
         self.btn_set_wallpaper.setText(_translate("Dialog", "set wallapper"))
         self.label_info.setText(_translate("Dialog", "click setup to begin configuration"))

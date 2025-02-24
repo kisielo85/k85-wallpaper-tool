@@ -4,3 +4,5 @@ data.pkl
 wallpaper.png
 test.py
 /.vscode
+/build
+/dist
