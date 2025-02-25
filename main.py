@@ -1,6 +1,7 @@
 import os
 import scripts.wallpapertools as w
 import scripts.setuptools as s
+import scripts.multiplatform as m
 from tkinter import Tk, Frame, Label, Button, mainloop, DISABLED, NORMAL, filedialog
 
 
@@ -51,9 +52,7 @@ def start_setup():
 
 def set_wallpaper():
     global info_label, root
-    file_path = filedialog.askopenfilename(
-        filetypes=[('', '*.jpg;*.jpeg;*.png'), ('All Files', '*')]
-    )
+    file_path = m.get_file()
     if not file_path:
         return
 
@@ -66,8 +65,10 @@ def set_wallpaper():
     except:
         info_txt("error: can't process image\n" + filename)
         return
+    
+    m.set_wallpaper_span()
 
-    if w.set_wallpaper(img):
+    if m.set_wallpaper(img):
         info_txt("wallpaper set\n" + filename)
     else:
         info_txt("error: can't set wallpaper")

@@ -13,7 +13,11 @@ a simple wallpaper tool for multiple monitors that takes into account different 
 
 ### Option 2
 
-1. Install [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) and [Python](https://www.python.org/downloads/)
+1. Install [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git), [Python](https://www.python.org/downloads/)<br><br>
+   1.2 (linux only) make sure zenity is installed
+   ```bash
+   sudo apt install zenity
+   ```
 2. Clone repository
 
    ```cmd

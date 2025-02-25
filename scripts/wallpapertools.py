@@ -1,11 +1,8 @@
-import ctypes
-import os
 from PIL import Image, ImageDraw
 from screeninfo import get_monitors
 import math
 from dataclasses import dataclass
 import pickle
-from sys import platform
 
 
 base_img = False
@@ -136,20 +133,6 @@ def get_base_image():
 
     base_img = template
     return base_img.copy()
-
-
-def set_wallpaper(image_path):
-    try:
-        image_path = os.path.abspath(image_path)
-        if platform == "linux" or platform == "linux2":
-            os.system(
-                f"gsettings set org.gnome.desktop.background picture-uri file://{image_path}"
-            )
-        elif platform == "win32":
-            ctypes.windll.user32.SystemParametersInfoW(20, 0, image_path, 0x01)
-        return True
-    except:
-        return False
 
 
 # process and save data from scale setup
