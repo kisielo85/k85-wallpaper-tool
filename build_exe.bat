@@ -1,1 +1,1 @@
-pyinstaller --onefile --icon=assets/icon.png --name=k85-wallpaper-tool --add-data "assets/*_img.png:assets" --noconfirm --noconsole main.py
+pyinstaller --onefile --icon=assets/icon.png --name="k85 wallpaper tool" --add-data "assets/*_img.png:assets" --noconfirm --noconsole main.py
