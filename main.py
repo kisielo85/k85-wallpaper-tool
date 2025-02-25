@@ -1,10 +1,13 @@
 import sys
 import scripts.wallpapertools as w
 import scripts.setuptools as s
-from tkinter import Tk, Label, Button, mainloop
+from tkinter import Tk, Label, Button, mainloop, DISABLED, NORMAL, filedialog
 
+def resolution():
+    return f"desired resolution: {int(w.data['img_size'][0]+1)} x {int(w.data['img_size'][1]+1)}px"
 
 def start_setup():
+    global setup_btn, wallpaper_btn, info_label
     w.load_monitors()
     canceled = False
     w.data['setup_order'] = [[0, 0]]  # DEBUG
@@ -27,25 +30,22 @@ def start_setup():
             break
 
     if canceled:
-        # self.ui.btn_set_wallpaper.setEnabled(False)
-        # self.ui.label_info.setText("setup canceled\nclick again to retry")
+        wallpaper_btn.config(state=DISABLED)
+        info_label.config(text="setup canceled\nclick again to retry")
         return
 
     w.calculate_img_conversion()
     if w.verify_data(w.data):
         w.save_data()
-        # self.ui.btn_set_wallpaper.setEnabled(True)
-        # self.ui.label_info.setText(f"configuration saved\n{self.resolution()}")
-
+        wallpaper_btn.config(state=NORMAL)
+        info_label.config(text=f"configuration saved\n{resolution()}")
     else:
-        pass
-        # self.ui.label_info.setText("error: config invalid")
-    print("steup done")
+        info_label.config(text="error: config invalid")
 
 
 def set_wallpaper():
     pass
-    # file_dialog = QFileDialog(self)
+    # file_dialog = QFileDialog()
     # file_dialog.setFileMode(QFileDialog.FileMode.AnyFile)
     # file_dialog.setViewMode(QFileDialog.ViewMode.Detail)
     # file_dialog.setNameFilters(["(*.jpg *.jpeg *.png)"])
@@ -58,13 +58,14 @@ master = Tk()
 master.geometry("200x200")
 master.title("k85 wallpaper tool")
 
-Label(
+info_label = Label(
     master,
     text="info sus amogus sus gus gus suuuuussssss gus amogus",
     pady=10,
     padx=10,
     width=200,
-).pack()
+)
+info_label.pack()
 
 setup_btn = Button(master, text="setup", command=start_setup)
 setup_btn.pack(pady=10)
