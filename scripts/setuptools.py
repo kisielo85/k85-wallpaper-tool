@@ -1,57 +1,63 @@
-import tkinter as tk
-from pynput import keyboard
-from sys import platform
-import os
 from PIL import Image, ImageTk
+from pynput import keyboard
+import tkinter as tk
+import sys, os
 
 temp_middle = [0, 0]
 
+
+# proper file path for .exe version
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 # prepare canvas
 def get_canvas_base(data, master, mode="scale"):
     canvas_x, canvas_y = data['canvas_size']
     min_x, min_y = data['min_pos']
 
-    root = tk.Toplevel(master)
-    root.geometry(f"{canvas_x}x{canvas_y}+{min_x}+{min_y}")
-    root.overrideredirect(True)
-    if platform == "win32":
-        root.attributes("-transparentcolor", "gray")
+    window = tk.Toplevel(master)
+    window.geometry(f"{canvas_x}x{canvas_y}+{min_x}+{min_y}")
+    window.overrideredirect(True)
+    if sys.platform == "win32":
+        window.attributes("-transparentcolor", "gray")
 
     canvas = tk.Canvas(
-        root, width=canvas_x, height=canvas_y, bg="black", highlightthickness=0
+        window, width=canvas_x, height=canvas_y, bg="black", highlightthickness=0
     )
 
     # draw instructions on every screen
     img_path = "assets/scale_img.png" if mode == "scale" else "assets/gap_img.png"
 
     canvas.images = []
-    canvas.image_ids = []
     for m in data['monitors']:
-        img = Image.open(img_path)
+        # resize and center img
+        img = Image.open(resource_path(img_path))
         x, y = img.size
         new_x = int(m.width * 0.3)
         img = img.resize((new_x, int(new_x / x * y)))
         x, y = img.size
         img = ImageTk.PhotoImage(img)
-        print(m.center.x)
-        image_id = canvas.create_image(
+        canvas.create_image(
             m.center.x - x // 2, m.center.y - y // 2, anchor=tk.NW, image=img
         )
-        canvas.image_ids.append(image_id)
         canvas.images.append(img)
 
     canvas.pack()
-    root.lift()
-    root.focus_force()
-    return root, canvas
+    window.lift()
+    window.focus_force()
+    return window, canvas
 
 
 # UI for getting display scale
 def get_scale(data, screens, master):
     out = False
     dragging_line = False
-    root, canvas = get_canvas_base(data, master, "scale")
+    window, canvas = get_canvas_base(data, master, "scale")
 
     # draw horizontal lines
     lines = []
@@ -71,7 +77,6 @@ def get_scale(data, screens, master):
 
     def on_mouse_press(event):
         nonlocal dragging_line, previous_line
-
         # check if there is a line nearby to grab
         for line in lines:
             x1, y, x2, _ = canvas.coords(line)
@@ -105,14 +110,15 @@ def get_scale(data, screens, master):
         listener.stop()
         if canceled:
             out = False
-            root.destroy()
-            return "break"
+            window.destroy()
+            return
 
         out = []
         for i, line in enumerate(lines):
             _, y, _, _ = canvas.coords(line)
             out.append(int(y))
 
+        # save middle coordinates for gap configuration
         global temp_middle
         temp_middle[0] = (out[0] + out[2]) // 2
         temp_middle[1] = (out[1] + out[3]) // 2
@@ -120,8 +126,8 @@ def get_scale(data, screens, master):
         for i in range(4):
             out[i] -= offset[i]
 
-        root.destroy()
-        return "break"
+        window.destroy()
+        return
 
     def set_cursor(cursor):
         canvas.config(cursor=cursor)
@@ -144,10 +150,10 @@ def get_scale(data, screens, master):
     listener = keyboard.Listener(on_press=on_press)
     listener.start()
 
-    root.bind("<ButtonPress-1>", on_mouse_press)
-    root.bind("<B1-Motion>", on_mouse_drag)
-    root.bind("<ButtonRelease-1>", on_mouse_release)
-    master.wait_window(root)
+    window.bind("<ButtonPress-1>", on_mouse_press)
+    window.bind("<B1-Motion>", on_mouse_drag)
+    window.bind("<ButtonRelease-1>", on_mouse_release)
+    master.wait_window(window)
 
     return out
 
@@ -157,7 +163,7 @@ def get_gap(data, s, master):
     drag_from = -1
     multiplier = 0
     middle = data['monitors'][s[0]].pos_end.x
-    root, canvas = get_canvas_base(data, master, "gap")
+    window, canvas = get_canvas_base(data, master, "gap")
 
     # draw diagonal lines
     gap = 20
@@ -209,7 +215,7 @@ def get_gap(data, s, master):
         listener.stop()
         if canceled:
             gap = False
-        root.destroy()
+        window.destroy()
 
     def on_press(key):
         match key:
@@ -225,12 +231,12 @@ def get_gap(data, s, master):
     listener = keyboard.Listener(on_press=on_press)
     listener.start()
 
-    root.bind("<ButtonPress-1>", on_mouse_press)
-    root.bind("<B1-Motion>", on_mouse_drag)
-    root.bind("<ButtonRelease-1>", lambda e: update_lines())
+    window.bind("<ButtonPress-1>", on_mouse_press)
+    window.bind("<B1-Motion>", on_mouse_drag)
+    window.bind("<ButtonRelease-1>", lambda e: update_lines())
     canvas.config(cursor="fleur")
     update_lines()
-    master.wait_window(root)
+    master.wait_window(window)
 
     if gap != False:
         return gap + 2

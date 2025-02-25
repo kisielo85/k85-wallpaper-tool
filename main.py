@@ -1,28 +1,34 @@
-import sys
+import os
 import scripts.wallpapertools as w
 import scripts.setuptools as s
-from tkinter import Tk, Label, Button, mainloop, DISABLED, NORMAL, filedialog
+from tkinter import Tk, Frame, Label, Button, mainloop, DISABLED, NORMAL, filedialog
 
-def resolution():
-    return f"desired resolution: {int(w.data['img_size'][0]+1)} x {int(w.data['img_size'][1]+1)}px"
+
+def info_txt(txt, show_resolution=True):
+    global info_label
+    if show_resolution:
+        txt += f"\ndesired resolution: {int(w.data['img_size'][0]+1)} x {int(w.data['img_size'][1]+1)}px"
+    while txt.count("\n") < 2:
+        txt += "\n"
+
+    info_label.config(text=txt)
+
 
 def start_setup():
     global setup_btn, wallpaper_btn, info_label
     w.load_monitors()
     canceled = False
-    w.data['setup_order'] = [[0, 0]]  # DEBUG
-    print("startloop")
-    for screens in w.data['setup_order']:
-        lines = s.get_scale(w.data, screens, master)
 
-        print("lines:", lines)
+    for screens in w.data['setup_order']:
+        lines = s.get_scale(w.data, screens, root)
+        
         if lines:
             w.calculate_scale(screens, lines)
         else:
             canceled = True
             break
 
-        gap = s.get_gap(w.data, screens, master)
+        gap = s.get_gap(w.data, screens, root)
         if gap:
             w.save_gap(screens, gap)
         else:
@@ -31,46 +37,71 @@ def start_setup():
 
     if canceled:
         wallpaper_btn.config(state=DISABLED)
-        info_label.config(text="setup canceled\nclick again to retry")
+        info_txt("setup canceled\nclick again to retry", False)
         return
 
     w.calculate_img_conversion()
     if w.verify_data(w.data):
         w.save_data()
         wallpaper_btn.config(state=NORMAL)
-        info_label.config(text=f"configuration saved\n{resolution()}")
+        info_txt("configuration saved")
     else:
-        info_label.config(text="error: config invalid")
+        info_txt("error: config invalid", False)
 
 
 def set_wallpaper():
-    pass
-    # file_dialog = QFileDialog()
-    # file_dialog.setFileMode(QFileDialog.FileMode.AnyFile)
-    # file_dialog.setViewMode(QFileDialog.ViewMode.Detail)
-    # file_dialog.setNameFilters(["(*.jpg *.jpeg *.png)"])
-    # if file_dialog.exec():
-    #    file_path = file_dialog.selectedFiles()[0]
-    #    w.set_wallpaper(w.convert_wallpaper(file_path))
+    global info_label, root
+    file_path = filedialog.askopenfilename(
+        filetypes=[('', '*.jpg;*.jpeg;*.png'), ('All Files', '*')]
+    )
+    if not file_path:
+        return
+
+    filename = os.path.basename(file_path)
+    info_txt("processing..\n" + filename)
+    root.update_idletasks()
+
+    try:
+        img = w.convert_wallpaper(file_path)
+    except:
+        info_txt("error: can't process image\n" + filename)
+        return
+
+    if w.set_wallpaper(img):
+        info_txt("wallpaper set\n" + filename)
+    else:
+        info_txt("error: can't set wallpaper")
 
 
-master = Tk()
-master.geometry("200x200")
-master.title("k85 wallpaper tool")
+root = Tk()
+root.geometry("350x150")
+root.title("k85 wallpaper tool")
+root.resizable(False, False)
+root.option_add("*Font", "Arial 14")
 
 info_label = Label(
-    master,
-    text="info sus amogus sus gus gus suuuuussssss gus amogus",
+    root,
+    text="",
     pady=10,
     padx=10,
     width=200,
 )
 info_label.pack()
+info_txt("click setup to begin configuration", False)
 
-setup_btn = Button(master, text="setup", command=start_setup)
-setup_btn.pack(pady=10)
+btn_frame = Frame(root)
+btn_frame.pack(pady=10)
 
-wallpaper_btn = Button(master, text="set_wallpaper", command=set_wallpaper)
-wallpaper_btn.pack(pady=10)
+setup_btn = Button(btn_frame, text="setup", command=start_setup)
+setup_btn.pack(side="left", padx=5)
+
+wallpaper_btn = Button(
+    btn_frame, text="set wallpaper", command=set_wallpaper, state=DISABLED
+)
+wallpaper_btn.pack(side="right", padx=5)
+
+if w.load_data():
+    wallpaper_btn.config(state=NORMAL)
+    info_txt("previous config loaded")
 
 mainloop()

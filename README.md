@@ -1,6 +1,42 @@
 # k85 wallpaper tool
- a simple wallpaper tool for multiple monitors that takes into account different screen sizes and spaces between them
 
-## 🚧 work in progress 🚧
-this project is under active development<br>
-currently it does not support monitors stacked vertically
+a simple wallpaper tool for multiple monitors that takes into account different screen sizes and spaces between them
+<br><br>
+*note: currently it does not work for monitors stacked vertically*
+
+## Installation
+
+1. Install [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) and [Python](https://www.python.org/downloads/)
+2. Clone repository
+
+   ```cmd
+   git clone https://github.com/kisielo85/k85-wallpaper-tool
+   ```
+   ```cmd
+   cd k85-wallpaper-tool
+   ```
+3. Create virtual enviroment (optional)
+
+   ```bash
+   python -m venv venv
+   ```
+   **Windows**
+
+   ```cmd
+   venv\Scripts\activate
+   ```
+   **Linux**
+
+   ```bash
+   source venv/bin/activate
+   ```
+4. Install requirements
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+5. Run script
+
+   ```bash
+   python main.py
+   ```
