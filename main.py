@@ -61,17 +61,17 @@ def set_wallpaper():
     root.update_idletasks()
 
     try:
-        img = w.convert_wallpaper(file_path)
+        w.convert_wallpaper(file_path)
     except:
         info_txt("error: can't process image\n" + filename)
         return
     
     m.set_wallpaper_span()
 
-    if m.set_wallpaper(img):
+    if m.set_wallpaper():
         info_txt("wallpaper set\n" + filename)
     else:
-        info_txt("error: can't set wallpaper")
+        info_txt("error: can't change wallpaper.\ntry setting wallpaper.png manually")
 
 
 root = Tk()
