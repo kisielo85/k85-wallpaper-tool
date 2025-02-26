@@ -26,10 +26,11 @@ class Monitor:
     pos_end: Position
     height: int
     width: int
+    center: Position
     primary: bool
     has_bind: bool
-    center: Position
     bind_to: int = None
+    bind_horizontal: bool = None
     gap: int = 0
     scale: float = 1.0
     relative_y: int = 0
@@ -110,9 +111,12 @@ def load_monitors():
         m.bind_to = m2.id
         m.has_bind = True
 
-        data['setup_order'].append(
-            [m.id, m2.id] if m.pos.x < m2.pos.x else [m2.id, m.id]
-        )
+        if m2.pos.y < m.pos.y < m2.pos_end.y or m2.pos.y < m.pos_end.y < m2.pos_end.y:
+            m.bind_horizontal = True
+        else:
+            m.bind_horizontal = False
+
+        data['setup_order'].append([m.id, m2.id])
 
 
 # creates a blank cavas with green monitor outlines
@@ -142,14 +146,11 @@ def calculate_scale(s, lines):
     m1 = data['monitors'][s[0]]
     m2 = data['monitors'][s[1]]
 
-    # make sure m1 is the one being set
-    if m2.bind_to == m1.id:
-        m1, m2 = m2, m1
-        lines[0], lines[1] = lines[1], lines[0]
-        lines[2], lines[3] = lines[3], lines[2]
-
     m1.scale = m2.scale * (lines[3] - lines[1]) / (lines[2] - lines[0])
-    m1.relative_y = lines[1] - lines[0] * m1.scale
+    if m1.bind_horizontal:
+        m1.relative_y = lines[1] - lines[0] * m1.scale
+    else:
+        m1.relative_x = lines[1] - lines[0] * m1.scale
 
     temp_middle[0] = (lines[0] + lines[2]) // 2
     temp_middle[1] = (lines[1] + lines[3]) // 2
@@ -161,16 +162,19 @@ def save_gap(s, gap):
     m1 = data['monitors'][s[0]]
     m2 = data['monitors'][s[1]]
 
-    # make sure m1 is the one being set
-    if m2.bind_to == m1.id:
-        m1, m2 = m2, m1
-
     m1.gap = gap
 
-    if m1.pos.x < m2.pos.x:
-        m1.relative_x = -gap * 2 - m1.width * m1.scale
+    if m1.bind_horizontal:
+        if m1.pos.x < m2.pos.x:
+            m1.relative_x = -gap * 2 - m1.width * m1.scale
+        else:
+            m1.relative_x = m2.width * m2.scale + gap * 2
     else:
-        m1.relative_x = m2.width * m2.scale + gap * 2
+        if m1.pos.y < m2.pos.y:
+            m1.relative_y = -gap * 2 - m1.height * m1.scale
+        else:
+            m1.relative_y = m2.height * m2.scale + gap * 2
+
 
 
 def verify_data(d):
@@ -194,7 +198,7 @@ def verify_data(d):
 def load_data():
     global data
     try:
-        with open("data.pkl", "rb") as f:
+        with open("k85WallpaperToolConfig.pkl", "rb") as f:
             d = pickle.load(f)
         if verify_data(d):
             data = d
@@ -207,7 +211,7 @@ def load_data():
 
 
 def save_data():
-    with open("data.pkl", "wb") as f:
+    with open("k85WallpaperToolConfig.pkl", "wb") as f:
         pickle.dump(data, f)
 
 
@@ -231,8 +235,6 @@ def calculate_img_conversion():
     for o in data['setup_order']:
         m1 = data['monitors'][o[0]]
         m2 = data['monitors'][o[1]]
-        if m2.bind_to == m1.id:
-            m1, m2 = m2, m1
 
         pos = rect[m2.id]['from'].copy()
         pos[0] += m1.relative_x

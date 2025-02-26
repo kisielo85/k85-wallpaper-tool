@@ -1,9 +1,9 @@
-/venv
-*__pycache__
-data.pkl
-wallpaper.png
-test.py
 /.vscode
+/venv
 /build
 /dist
+*__pycache__
 *.spec
+k85WallpaperToolConfig.pkl
+wallpaper.png
+test.py

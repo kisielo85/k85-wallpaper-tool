@@ -15,23 +15,23 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
+
 # prepare canvas
-def get_canvas_base(data, master, mode="scale"):
+def get_canvas_base(data, master, mode, mode_H):
     canvas_x, canvas_y = data['canvas_size']
     min_x, min_y = data['min_pos']
 
     window = tk.Toplevel(master)
     window.geometry(f"{canvas_x}x{canvas_y}+{min_x}+{min_y}")
     window.overrideredirect(True)
-    if sys.platform == "win32":
-        window.attributes("-transparentcolor", "gray")
 
     canvas = tk.Canvas(
         window, width=canvas_x, height=canvas_y, bg="black", highlightthickness=0
     )
 
     # draw instructions on every screen
-    img_path = "assets/scale_img.png" if mode == "scale" else "assets/gap_img.png"
+    mode_H = "H" if mode_H else "V"
+    img_path = f"assets/{mode}_{mode_H}_img.png"
 
     canvas.images = []
     for m in data['monitors']:
@@ -55,43 +55,70 @@ def get_canvas_base(data, master, mode="scale"):
 
 # UI for getting display scale
 def get_scale(data, screens, master):
+    s = screens.copy()
     out = False
     dragging_line = False
-    window, canvas = get_canvas_base(data, master, "scale")
+    m = data['monitors'][s[0]]
+    mode_H = m.bind_horizontal
+    window, canvas = get_canvas_base(data, master, "scale", mode_H)
 
     # draw horizontal lines
     lines = []
     offset = []
-    for i in range(2):
-        for s in screens:
-            m = data['monitors'][s]
 
-            y = m.pos_end.y - 20 if i else m.pos.y + 20
-            fill = "red" if i else "blue"
+    # fmt: off
+    if mode_H: 
+        if data['monitors'][s[1]].pos.x < m.pos.x:
+            s[0], s[1] = s[1], s[0]
+        
+        for i in range(2):
+            for s_id in s:
+                m = data['monitors'][s_id]
 
-            offset.append(m.pos.y)
-            lines.append(
-                canvas.create_line(m.pos.x, y, m.pos_end.x, y, fill=fill, width=6)
-            )
+                y = m.pos_end.y - 20 if i else m.pos.y + 20
+                fill = "red" if i else "blue"
+
+                offset.append(m.pos.y)
+                lines.append(canvas.create_line(m.pos.x, y, m.pos_end.x, y, fill=fill, width=6))
+
+    else:
+        if data['monitors'][s[1]].pos.y < m.pos.y:
+            s[0], s[1] = s[1], s[0]
+
+        for i in range(2):
+            for s_id in s:
+                m = data['monitors'][s_id]
+
+                x = m.pos_end.x - 20 if i else m.pos.x + 20
+                fill = "red" if i else "blue"
+
+                offset.append(m.pos.x)
+                lines.append(
+                    canvas.create_line(x, m.pos.y, x, m.pos_end.y, fill=fill, width=6)
+                )
+    
     previous_line = lines[0]
 
     def on_mouse_press(event):
         nonlocal dragging_line, previous_line
         # check if there is a line nearby to grab
         for line in lines:
-            x1, y, x2, _ = canvas.coords(line)
-            if abs(event.y - y) < 20 and x1 < event.x < x2:
+            x1, y1, x2, y2 = canvas.coords(line)
+            if (mode_H and abs(event.y - y1) < 20 and x1 < event.x < x2) or (abs(event.x - x1) < 20 and y1 < event.y < y2):
                 dragging_line = line
                 previous_line = line
                 set_cursor("fleur")
                 break
 
+    # fmt: on
     def on_mouse_drag(event):
         nonlocal dragging_line
         if dragging_line:
-            y = event.y
-            x1, _, x2, _ = canvas.coords(dragging_line)
-            canvas.coords(dragging_line, x1, y, x2, y)
+            x1, y1, x2, y2 = canvas.coords(dragging_line)
+            if mode_H:
+                canvas.coords(dragging_line, x1, event.y, x2, event.y)
+            else:
+                canvas.coords(dragging_line, event.x, y1, event.x, y2)
 
     def on_mouse_release(event):
         nonlocal dragging_line
@@ -101,9 +128,13 @@ def get_scale(data, screens, master):
     def move_line(val):
         nonlocal previous_line
         if previous_line:
-            x1, y, x2, _ = canvas.coords(previous_line)
-            y += val
-            canvas.coords(previous_line, x1, y, x2, y)
+            x1, y1, x2, y2 = canvas.coords(previous_line)
+            if mode_H:
+                y1 += val
+                canvas.coords(previous_line, x1, y1, x2, y1)
+            else:
+                x1 += val
+                canvas.coords(previous_line, x1, y1, x1, y2)
 
     def close(canceled=False):
         nonlocal out
@@ -115,8 +146,11 @@ def get_scale(data, screens, master):
 
         out = []
         for i, line in enumerate(lines):
-            _, y, _, _ = canvas.coords(line)
-            out.append(int(y))
+            x, y, _, _ = canvas.coords(line)
+            if mode_H:
+                out.append(int(y))
+            else:
+                out.append(int(x))
 
         # save middle coordinates for gap configuration
         global temp_middle
@@ -138,9 +172,9 @@ def get_scale(data, screens, master):
 
     def on_press(key):
         match key:
-            case keyboard.Key.left | keyboard.Key.down:
+            case keyboard.Key.right | keyboard.Key.down:
                 move_line(1)
-            case keyboard.Key.right | keyboard.Key.up:
+            case keyboard.Key.left | keyboard.Key.up:
                 move_line(-1)
             case keyboard.Key.esc:
                 close(canceled=True)
@@ -159,39 +193,71 @@ def get_scale(data, screens, master):
 
 
 # UI for getting space between monitors
-def get_gap(data, s, master):
+def get_gap(data, screens, master):
+    s = screens.copy()
     drag_from = -1
     multiplier = 0
-    middle = data['monitors'][s[0]].pos_end.x
-    window, canvas = get_canvas_base(data, master, "gap")
+    m = data['monitors'][s[0]]
+    mode_H = m.bind_horizontal
+    window, canvas = get_canvas_base(data, master, "gap", mode_H)
 
     # draw diagonal lines
     gap = 20
     lines = []
-    for i in range(4):
-        s_id = i % 2
-        m = data['monitors'][s[s_id]]
-        len = m.width * 2
+    # fmt: off
+    if mode_H: 
+        if data['monitors'][s[1]].pos.x < m.pos.x:
+            s[0], s[1] = s[1], s[0]
+        middle = data['monitors'][s[0]].pos_end.x
+        
+        for i in range(4):
+            s_id = i % 2
+            m = data['monitors'][s[s_id]]
+            len = m.width * 2
 
-        x2 = m.pos.x + 2 if i % 2 else m.pos_end.x - 2
-        y2 = temp_middle[s_id]
-        x1 = x2 + (len if i % 2 else -len)
-        y1 = y2 + (-len if i < 2 else len)
+            x2 = m.pos.x + 2 if i % 2 else m.pos_end.x - 2
+            y2 = temp_middle[s_id]
+            x1 = x2 + (len if i % 2 else -len)
+            y1 = y2 + (-len if i < 2 else len)
 
-        fill = 'blue' if 0 < i < 3 else 'red'
-        lines.append(canvas.create_line(x1, y1, x2, y2, fill=fill, width=6))
+            fill = 'blue' if 0 < i < 3 else 'red'
+            lines.append(canvas.create_line(x1, y1, x2, y2, fill=fill, width=6))
+    else:
+        if data['monitors'][s[1]].pos.y < m.pos.y:
+            s[0], s[1] = s[1], s[0]
+        middle = data['monitors'][s[0]].pos_end.y
+
+        for i in range(4):
+            s_id = i % 2
+            m = data['monitors'][s[s_id]]
+            len = m.height * 2
+
+            y2 = m.pos.y + 2 if i % 2 else m.pos_end.y - 2
+            x2 = temp_middle[s_id]
+            y1 = y2 + (len if i % 2 else -len)
+            x1 = x2 + (-len if i < 2 else len)
+
+            fill = 'blue' if 0 < i < 3 else 'red'
+            lines.append(canvas.create_line(x1, y1, x2, y2, fill=fill, width=6))
 
     def on_mouse_press(event):
         nonlocal drag_from, multiplier
-        multiplier = 1 if event.x > middle else -1
-        drag_from = event.x
+        if mode_H:
+            multiplier = 1 if event.x > middle else -1
+            drag_from = event.x
+        else:
+            multiplier = 1 if event.y > middle else -1
+            drag_from = event.y
 
     def on_mouse_drag(event):
         nonlocal drag_from, gap
         if drag_from != -1:
-            move = (drag_from - event.x) * multiplier
-            gap += move
-            drag_from = event.x
+            if mode_H:
+                gap += (drag_from - event.x) * multiplier
+                drag_from = event.x
+            else:
+                gap += (drag_from - event.y) * multiplier
+                drag_from = event.y
             update_lines()
 
     # used by arrows
@@ -205,9 +271,13 @@ def get_gap(data, s, master):
         for i, line in enumerate(lines):
             x1, y1, x2, y2 = canvas.coords(line)
 
-            y2 = temp_middle[i % 2] + (-gap if i < 2 else +gap)
-            y1 = y2 + (x1 - x2) * (-1 if 0 < i < 3 else 1)
-
+            if mode_H:
+                y2 = temp_middle[i % 2] + (-gap if i < 2 else +gap)
+                y1 = y2 + (x1 - x2) * (-1 if 0 < i < 3 else 1)
+            else:
+                x2 = temp_middle[i % 2] + (-gap if i < 2 else +gap)
+                x1 = x2 + (y1 - y2) * (-1 if 0 < i < 3 else 1)
+            
             canvas.coords(line, x1, y1, x2, y2)
 
     def close(canceled=False):

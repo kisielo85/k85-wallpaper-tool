@@ -8,8 +8,6 @@ Compatible with:
 * Linux Gnome / Cinnamon / Mate
 
 on other enviroments you're gonna have to manually set wallpaper mode to "spanned" and use the created .png file
-<br><br>
-*currently it does not work for monitors stacked vertically*
 
 ## Installation
 
