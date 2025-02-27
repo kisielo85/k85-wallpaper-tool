@@ -111,7 +111,12 @@ def load_monitors():
         m.bind_to = m2.id
         m.has_bind = True
 
-        if m2.pos.y < m.pos.y < m2.pos_end.y or m2.pos.y < m.pos_end.y < m2.pos_end.y:
+        if (
+            (m2.pos.y < m.pos.y < m2.pos_end.y)
+            or (m2.pos.y < m.pos_end.y < m2.pos_end.y)
+            or (m.pos.y < m2.pos.y < m.pos_end.y)
+            or (m.pos.y < m2.pos_end.y < m.pos_end.y)
+        ):
             m.bind_horizontal = True
         else:
             m.bind_horizontal = False
@@ -146,7 +151,12 @@ def calculate_scale(s, lines):
     m1 = data['monitors'][s[0]]
     m2 = data['monitors'][s[1]]
 
-    m1.scale = m2.scale * (lines[3] - lines[1]) / (lines[2] - lines[0])
+    if (m1.bind_horizontal and m1.pos.x > m2.pos.x) or (
+        not m1.bind_horizontal and m1.pos.y > m2.pos.y
+    ):
+        lines[3], lines[1], lines[2], lines[0] = lines[2], lines[0], lines[3], lines[1]
+
+    m1.scale = m2.scale * ((lines[3] - lines[1]) / (lines[2] - lines[0]))
     if m1.bind_horizontal:
         m1.relative_y = lines[1] - lines[0] * m1.scale
     else:
@@ -174,7 +184,6 @@ def save_gap(s, gap):
             m1.relative_y = -gap * 2 - m1.height * m1.scale
         else:
             m1.relative_y = m2.height * m2.scale + gap * 2
-
 
 
 def verify_data(d):
