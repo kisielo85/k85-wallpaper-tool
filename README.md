@@ -1,7 +1,32 @@
 # k85 wallpaper tool
 
-a simple wallpaper tool for multiple monitors that takes into account different screen sizes and spaces between them
-<br><br>
+If you ever wanted to set a wallpaper that would span across multiple monitors, you probably know how hard it is to make it look seamless. That's where this tool comes in handy. After a quick and easy setup, it calculates the differences in display sizes and the gaps between them, allowing you to set a perfectly aligned wallpaper.
+
+
+| Before                                              | After                                             |
+| ----------------------------------------------------- | --------------------------------------------------- |
+| ![wallpaper before](assets/github_img/1_before.jpg) | ![wallpaper after](assets/github_img/1_after.jpg) |
+
+The setup works by displaying lines that the user manually aligns. This only needs to be done once, as the configuration is saved for future use.
+
+![configuration gif](assets/github_img/setup.gif)
+<br>
+
+
+| Before                                              | After                                             |
+| ----------------------------------------------------- | --------------------------------------------------- |
+| ![wallpaper before](assets/github_img/2_before.jpg) | ![wallpaper after](assets/github_img/2_after.jpg) |
+| ![wallpaper before](assets/github_img/3_before.jpg) | ![wallpaper after](assets/github_img/3_after.jpg) |
+| ![wallpaper before](assets/github_img/4_before.jpg) | ![wallpaper after](assets/github_img/4_after.jpg) |
+
+
+| wallpaper                                                                                              | artist                                                           |
+| -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| [image1](https://www.reddit.com/media?url=https%3A%2F%2Fi.redd.it%2Fg9mkm42rvu0b1.jpg)                 | [kvacm](https://www.instagram.com/kvacm)                         |
+| [image2](https://www.freepik.com/free-vector/night-ocean-landscape-full-moon-stars-shine_17740155.htm) | [BGMotion_Utube](https://www.youtube.com/@BGMotion_Utube/videos) |
+| [image3](https://www.behance.net/gallery/48555649/80s-Pantera)                                         | [DTM_Illustration](https://www.behance.net/deto)                 |
+| [image4](https://www.pixiv.net/en/artworks/84466005)                                                   | [KRYP_132](https://www.pixiv.net/en/users/16096005)           |
+
 Compatible with:
 
 * Windows 10 / 11
