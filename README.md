@@ -36,7 +36,8 @@ on other enviroments you're gonna have to manually set wallpaper mode to "spanne
 
 ## Installation
 
-### Windows
+<details open>
+<summary>Windows</summary>
 
 #### Option 1: .exe file
 
@@ -64,8 +65,10 @@ on other enviroments you're gonna have to manually set wallpaper mode to "spanne
    ```bash
    py main.py
    ```
+</details>
 
-### Linux
+<details>
+<summary>Linux</summary>
 
 1. Install dependencies
    ```bash
@@ -90,3 +93,4 @@ on other enviroments you're gonna have to manually set wallpaper mode to "spanne
    ```bash
    python3 main.py
    ```
+</details>
