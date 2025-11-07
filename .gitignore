@@ -5,5 +5,4 @@
 *__pycache__
 *.spec
 k85WallpaperToolConfig.pkl
-wallpaper.png
-test.py
+/test_files

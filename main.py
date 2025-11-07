@@ -2,7 +2,8 @@ import os
 import scripts.wallpapertools as w
 import scripts.setuptools as s
 import scripts.multiplatform as m
-from tkinter import Tk, Frame, Label, Button, mainloop, DISABLED, NORMAL, filedialog
+from tkinter import Tk, Frame, Label, Button, mainloop, DISABLED, NORMAL, messagebox
+import sys
 
 
 def info_txt(txt, show_resolution=True):
@@ -13,6 +14,7 @@ def info_txt(txt, show_resolution=True):
         txt += "\n"
 
     info_label.config(text=txt)
+    root.update()
 
 
 def start_setup():
@@ -22,7 +24,7 @@ def start_setup():
 
     for screens in w.data['setup_order']:
         lines = s.get_scale(w.data, screens, root)
-        
+
         if lines:
             w.calculate_scale(screens, lines)
         else:
@@ -50,28 +52,47 @@ def start_setup():
         info_txt("error: config invalid", False)
 
 
-def set_wallpaper():
+def set_wallpaper(file_path=False):
     global info_label, root
-    file_path = m.get_file()
     if not file_path:
-        return
+        file_path = m.get_file()
+    if not file_path:
+        return False
 
     filename = os.path.basename(file_path)
+    if "converted85" in filename:
+        if not messagebox.askyesno(
+            "k85-wallpaper-tool",
+            "This file name suggests it’s already been converted.\nAre you sure you want to use it?",
+        ):
+            return True
+
+    setup_btn.config(state=DISABLED)
+    wallpaper_btn.config(state=DISABLED)
     info_txt("processing..\n" + filename)
-    root.update_idletasks()
 
     try:
-        w.convert_wallpaper(file_path)
+        video, path = w.convert_wallpaper(file_path, info_txt, filename)
+        setup_btn.config(state=NORMAL)
+        wallpaper_btn.config(state=NORMAL)
     except:
         info_txt("error: can't process image\n" + filename)
-        return
-    
-    m.set_wallpaper_span()
+        setup_btn.config(state=NORMAL)
+        wallpaper_btn.config(state=NORMAL)
+        return False
 
-    if m.set_wallpaper():
-        info_txt("wallpaper set\n" + filename)
+    if video == "no_ffmpeg":
+        info_txt("error: ffmpeg not installed\n")
+    elif video:
+        info_txt("wallpaper converted\n" + filename)
     else:
-        info_txt("error: can't change wallpaper.\ntry setting wallpaper.png manually")
+        m.set_wallpaper_span()
+
+        if m.set_wallpaper(path):
+            info_txt("wallpaper set\n" + filename)
+        else:
+            info_txt("error: can't change wallpaper.\ntry setting wallpaper.png manually")
+    return True
 
 
 root = Tk()
@@ -88,7 +109,6 @@ info_label = Label(
     width=200,
 )
 info_label.pack()
-info_txt("click setup to begin configuration", False)
 
 btn_frame = Frame(root)
 btn_frame.pack(pady=10)
@@ -96,13 +116,24 @@ btn_frame.pack(pady=10)
 setup_btn = Button(btn_frame, text="setup", command=start_setup)
 setup_btn.pack(side="left", padx=5)
 
-wallpaper_btn = Button(
-    btn_frame, text="set wallpaper", command=set_wallpaper, state=DISABLED
-)
+wallpaper_btn = Button(btn_frame, text="set wallpaper", command=set_wallpaper, state=DISABLED)
 wallpaper_btn.pack(side="right", padx=5)
+
+if len(sys.argv) >= 2:
+    file_open = sys.argv[1]
+else:
+    file_open = False
 
 if w.load_data():
     wallpaper_btn.config(state=NORMAL)
     info_txt("previous config loaded")
+    if file_open:
+        if set_wallpaper(file_open):
+            sys.exit()
+else:
+    info_txt(
+        f"{f"can't open file before setup\n{os.path.basename(file_open)}\n" if file_open else ""}click setup to begin configuration",
+        False,
+    )
 
 mainloop()

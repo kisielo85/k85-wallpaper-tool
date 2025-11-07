@@ -1,9 +1,16 @@
+import ctypes
+import os
 from PIL import Image, ImageDraw
 from screeninfo import get_monitors
 import math
 from dataclasses import dataclass
 import pickle
-
+from sys import platform
+import re
+import subprocess
+import time
+import sys
+from pathlib import Path
 
 base_img = False
 temp_middle = [0, 0]
@@ -124,26 +131,6 @@ def load_monitors():
         data['setup_order'].append([m.id, m2.id])
 
 
-# creates a blank cavas with green monitor outlines
-def get_base_image():
-    global data
-
-    if not data:
-        load_monitors()
-
-    template = Image.new('RGB', data['canvas_size'])
-    draw = ImageDraw.Draw(template)
-
-    # outlines
-    for m in data['monitors']:
-        rect_from = m.pos.arr()
-        rect_to = m.pos_end.arr()
-        draw.rectangle([rect_from, rect_to], outline='green')
-
-    base_img = template
-    return base_img.copy()
-
-
 # process and save data from scale setup
 def calculate_scale(s, lines):
     global data
@@ -151,9 +138,7 @@ def calculate_scale(s, lines):
     m1 = data['monitors'][s[0]]
     m2 = data['monitors'][s[1]]
 
-    if (m1.bind_horizontal and m1.pos.x > m2.pos.x) or (
-        not m1.bind_horizontal and m1.pos.y > m2.pos.y
-    ):
+    if (m1.bind_horizontal and m1.pos.x > m2.pos.x) or (not m1.bind_horizontal and m1.pos.y > m2.pos.y):
         lines[3], lines[1], lines[2], lines[0] = lines[2], lines[0], lines[3], lines[1]
 
     m1.scale = m2.scale * ((lines[3] - lines[1]) / (lines[2] - lines[0]))
@@ -204,10 +189,16 @@ def verify_data(d):
     return True
 
 
+def my_path():
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent
+    else:
+        return Path(__file__).resolve().parent
+
 def load_data():
     global data
     try:
-        with open("k85WallpaperToolConfig.pkl", "rb") as f:
+        with open(f"{my_path()}/k85WallpaperToolConfig.pkl", "rb") as f:
             d = pickle.load(f)
         if verify_data(d):
             data = d
@@ -220,7 +211,7 @@ def load_data():
 
 
 def save_data():
-    with open("k85WallpaperToolConfig.pkl", "wb") as f:
+    with open(f"{my_path()}/k85WallpaperToolConfig.pkl", "wb") as f:
         pickle.dump(data, f)
 
 
@@ -273,42 +264,131 @@ def calculate_img_conversion():
 
 
 # converts image to wallpaper
-def convert_wallpaper(img):
+def convert_wallpaper(src, info_txt=False, filename=False):
+    out_path = os.path.dirname(src) + "/converted85_" + os.path.basename(src)
+    print(out_path)
+    video = "mp4" in src[src.rfind("."):].lower()
+
     calculate_img_conversion()
     global data
     rect = data['img_rectangles']
     save_data()
-    source_img = Image.open(img)
 
-    img_x, img_y = source_img.size
+    if video:  # get source mp4 data: duration, fps, resolution
+        out_path += ".mp4"
+        try:
+            src_x, src_y, fps, duration = (
+                os.popen(
+                    f"ffprobe -v error -select_streams v:0 -show_entries stream=width,height,r_frame_rate,duration -of csv=p=0 {src}"
+                )
+                .read()
+                .strip()
+                .split(",")
+            )
+        except:
+            return "no_ffmpeg", ""
+
+        has_audio = (
+            "audio"
+            in os.popen(
+                f'ffprobe -v error -select_streams a:0 -show_entries stream=codec_type -of csv=p=0 {src}'
+            ).read()
+        )
+
+        src_x = int(src_x)
+        src_y = int(src_y)
+    else:  # get source img resolution
+        out_path += ".png"
+        source_img = Image.open(src)
+        src_x, src_y = source_img.size
+        base_img = Image.new('RGB', data['canvas_size'])
+
     screen_x, screen_y = data['img_size'][0], data['img_size'][1]
 
+    offset_x = 0
+    offset_y = 0
     # check aspect ratio, crop so it's the same as in desired resolution
-    if img_x / img_y < screen_x / screen_y:
-        img_scale = img_x / screen_x
-        crop_px = (img_y - screen_y * img_scale) // 2
-        source_img = source_img.crop((0, crop_px, img_x, img_y - crop_px))
+    if src_x / src_y < screen_x / screen_y:
+        img_scale = src_x / screen_x
+        offset_y = (src_y - screen_y * img_scale) // 2
     else:
-        img_scale = img_y / screen_y
-        crop_px = (img_x - screen_x * img_scale) // 2
-        source_img = source_img.crop((crop_px, 0, img_x - crop_px, img_y))
+        img_scale = src_y / screen_y
+        offset_x = (src_x - screen_x * img_scale) // 2
 
-    # creating new .png
-    base_img = get_base_image()
-    for id, r in rect.items():
-        crop_area = (
-            r['from'][0] * img_scale,
-            r['from'][1] * img_scale,
-            r['to'][0] * img_scale,
-            r['to'][1] * img_scale,
-        )
-        m = data['monitors'][id]
+    if video:  # preparing the ffmpeg command
+        cmd = f"ffmpeg -f lavfi -i color=c=black:s={data['canvas_size'][0]}x{data['canvas_size'][1]}:r={fps}:d={duration}"
+        cmd += f" -i {src} -filter_complex \""
+        last = "0:v"
 
-        # copy area from source image and paste onto new wallpaper
-        screen_img = source_img.crop(crop_area).resize(
-            (m.width, m.height), Image.LANCZOS
-        )
-        base_img.paste(screen_img, (m.pos.x, m.pos.y))
+        for id, r in rect.items():
+            from_x = int(r['from'][0] * img_scale + offset_x)
+            from_y = int(r['from'][1] * img_scale + offset_y)
+            to_x = int(r['to'][0] * img_scale + offset_x)
+            to_y = int(r['to'][1] * img_scale + offset_y)
+            m = data['monitors'][id]
+            cmd += f"[1:v]crop={to_x-from_x}:{to_y-from_y}:{from_x}:{from_y},"
+            cmd += (
+                f"scale={m.width}:{m.height}[m{id}];[{last}][m{id}]overlay={m.pos.x}:{m.pos.y}[m{id}m];"
+            )
+            last = f"m{id}m"
 
-    base_img.save("wallpaper.png")
-    return "wallpaper.png"
+        cmd += f"\" -map \"[{last}]:v\" {"-map 1:a " if has_audio else ""}-c:v libx264 -pix_fmt yuv420p -c:a copy {out_path} -y"
+
+        fps, div = fps.split('/')
+        fps = int(fps) / int(div)
+        total_frames = int(fps * float(duration) + 0.99)
+        fps_pattern = re.compile(r"frame=\s*([\d\.]+)")
+        global eta
+        eta = []
+
+        # executing the command and checking progress
+        process = subprocess.Popen(cmd, stderr=subprocess.PIPE, universal_newlines=True, bufsize=1)
+        for line in process.stderr:
+            fps_match = fps_pattern.search(line)
+            if not fps_match:
+                continue
+            frame = int(fps_match.group(1))
+
+            if info_txt:
+                pr = frame * 100 / total_frames
+                info_txt(f"processing {int(pr)}%\n{filename}\n{eeta(pr)}", False)
+
+        process.wait()
+
+    else:
+        # creating new .png
+        for id, r in rect.items():
+            crop_area = (
+                int(r['from'][0] * img_scale + offset_x),
+                int(r['from'][1] * img_scale + offset_y),
+                int(r['to'][0] * img_scale + offset_x),
+                int(r['to'][1] * img_scale + offset_y),
+            )
+            m = data['monitors'][id]
+
+            # copy area from source image and paste onto new wallpaper
+            screen_img = source_img.crop(crop_area).resize((m.width, m.height), Image.LANCZOS)
+            base_img.paste(screen_img, (m.pos.x, m.pos.y))
+
+        base_img.save(out_path)
+
+    return video, out_path
+
+
+eta = []
+
+
+def eeta(pr):
+    nw = time.time()
+
+    eta.append([nw, pr])
+    if len(eta) > 20:
+        eta.pop(0)
+
+    progress = pr - eta[0][1]
+    if progress != 0:
+        elapsed = nw - eta[0][0]
+        t_left = int(elapsed * (100 - pr) / progress)
+        minute = int(t_left / 60)
+        return f"{f"{minute}min " if minute !=0 else ""}{t_left-minute*60}s"
+    return f"..."

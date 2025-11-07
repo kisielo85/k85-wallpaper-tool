@@ -53,10 +53,10 @@ def set_wallpaper(image_path = "wallpaper.png"):
 def get_file():
     match system:
         case "Windows":
-            return filedialog.askopenfilename(filetypes=[('', '*.jpg;*.jpeg;*.png'), ('All Files', '*')])
+            return filedialog.askopenfilename(filetypes=[('', '*.jpg;*.jpeg;*.png;*.mp4'), ('All Files', '*')])
         
         case "Linux":
-            return (os.popen("zenity --file-selection --file-filter='Image files (png, jpg, jpeg) | *.png *.jpg *.jpeg' --file-filter='All files | *'").read().strip())
+            return (os.popen("zenity --file-selection --file-filter='Image/Video files (png, jpg, jpeg, mp4) | *.png *.jpg *.jpeg *.mp4' --file-filter='All files | *'").read().strip())
         
         case _:
             print("not supported:", system)
