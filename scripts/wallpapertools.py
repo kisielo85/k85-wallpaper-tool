@@ -1,11 +1,9 @@
-import ctypes
 import os
-from PIL import Image, ImageDraw
+from PIL import Image
 from screeninfo import get_monitors
 import math
 from dataclasses import dataclass
 import pickle
-from sys import platform
 import re
 import subprocess
 import time
@@ -193,7 +191,7 @@ def my_path():
     if getattr(sys, "frozen", False):
         return Path(sys.executable).resolve().parent
     else:
-        return Path(__file__).resolve().parent
+        return Path(sys.argv[0]).resolve().parent
 
 def load_data():
     global data
@@ -265,8 +263,8 @@ def calculate_img_conversion():
 
 # converts image to wallpaper
 def convert_wallpaper(src, info_txt=False, filename=False):
-    out_path = os.path.dirname(src) + "/converted85_" + os.path.basename(src)
-    print(out_path)
+    out_path = os.path.dirname(src) + "/converted85_" + os.path.basename(src).split(".")[0]
+    print(os.path.basename(src))
     video = "mp4" in src[src.rfind("."):].lower()
 
     calculate_img_conversion()
@@ -279,7 +277,7 @@ def convert_wallpaper(src, info_txt=False, filename=False):
         try:
             src_x, src_y, fps, duration = (
                 os.popen(
-                    f"ffprobe -v error -select_streams v:0 -show_entries stream=width,height,r_frame_rate,duration -of csv=p=0 {src}"
+                    f"ffprobe -v error -select_streams v:0 -show_entries stream=width,height,r_frame_rate,duration -of csv=p=0 \"{src}\""
                 )
                 .read()
                 .strip()
@@ -291,7 +289,7 @@ def convert_wallpaper(src, info_txt=False, filename=False):
         has_audio = (
             "audio"
             in os.popen(
-                f'ffprobe -v error -select_streams a:0 -show_entries stream=codec_type -of csv=p=0 {src}'
+                f'ffprobe -v error -select_streams a:0 -show_entries stream=codec_type -of csv=p=0 \"{src}\"'
             ).read()
         )
 
@@ -317,7 +315,7 @@ def convert_wallpaper(src, info_txt=False, filename=False):
 
     if video:  # preparing the ffmpeg command
         cmd = f"ffmpeg -f lavfi -i color=c=black:s={data['canvas_size'][0]}x{data['canvas_size'][1]}:r={fps}:d={duration}"
-        cmd += f" -i {src} -filter_complex \""
+        cmd += f" -i \"{src}\" -filter_complex \""
         last = "0:v"
 
         for id, r in rect.items():
@@ -332,7 +330,7 @@ def convert_wallpaper(src, info_txt=False, filename=False):
             )
             last = f"m{id}m"
 
-        cmd += f"\" -map \"[{last}]:v\" {"-map 1:a " if has_audio else ""}-c:v libx264 -pix_fmt yuv420p -c:a copy {out_path} -y"
+        cmd += f"\" -map \"[{last}]:v\" {"-map 1:a " if has_audio else ""}-c:v libx264 -pix_fmt yuv420p -c:a copy \"{out_path}\" -y"
 
         fps, div = fps.split('/')
         fps = int(fps) / int(div)
