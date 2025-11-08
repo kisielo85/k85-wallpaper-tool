@@ -10,8 +10,11 @@ import time
 import sys
 from pathlib import Path
 
-startupinfo = subprocess.STARTUPINFO()
-startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+if sys.platform.startswith("win"):
+    startupinfo = subprocess.STARTUPINFO()
+    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+else:
+    startupinfo = None
 
 base_img = False
 temp_middle = [0, 0]
