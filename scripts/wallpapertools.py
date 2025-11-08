@@ -10,8 +10,11 @@ import time
 import sys
 from pathlib import Path
 
-startupinfo = subprocess.STARTUPINFO()
-startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+if sys.platform.startswith("win"):
+    startupinfo = subprocess.STARTUPINFO()
+    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+else:
+    startupinfo = None
 
 base_img = False
 temp_middle = [0, 0]
@@ -345,15 +348,24 @@ def convert_wallpaper(src, info_txt=False):
         eta = []
 
         # executing the command and checking progress
-        process = subprocess.Popen(
-            cmd,
-            stderr=subprocess.PIPE,
-            universal_newlines=True,
-            bufsize=1,
-            startupinfo=startupinfo,
-            creationflags=subprocess.CREATE_NO_WINDOW,
-            shell=True,
-        )
+        if sys.platform.startswith("win"):
+            process = subprocess.Popen(
+                cmd,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+                bufsize=1,
+                startupinfo=startupinfo,
+                creationflags=subprocess.CREATE_NO_WINDOW,
+                shell=True,
+            )
+        else:
+            process = subprocess.Popen(
+                cmd,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+                bufsize=1,
+                shell=True,
+            )
         for line in process.stderr:
             fps_match = fps_pattern.search(line)
             if not fps_match:

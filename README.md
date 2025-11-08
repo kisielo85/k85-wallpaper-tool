@@ -1,6 +1,6 @@
 <h1 align="center">k85 wallpaper tool</h1>
 <p align="center">
-   <img src="assets/icon.png" width="250" title="logo">
+   <img src="assets/github_img/logo.png" width="250" title="logo">
 </p>
 
 If you ever wanted to set a wallpaper that would span across multiple monitors, you probably know how hard it is to make it look seamless. That's where this tool comes in handy. After a quick and easy setup, it calculates the differences in display sizes and the gaps between them, allowing you to set a perfectly aligned wallpaper.
@@ -73,6 +73,22 @@ on other enviroments you're gonna have to manually set wallpaper mode to "spanne
 
 <details>
 <summary>Linux</summary>
+
+#### Option 1: executable file
+
+1. go to the [Releases](https://github.com/kisielo85/k85-wallpaper-tool/releases) page
+2. download the latest linux release
+3. grant executable permissions
+   ```bash
+   chmod +x ./k85.wallpaper.tool.linux.vX.XX
+   ```
+4. run it via GUI, or terminal
+   ```bash
+   ./k85.wallpaper.tool.linux.vX.XX
+   ```
+
+
+#### Option 2: running with python
 
 1. Install dependencies
    ```bash
