@@ -10,6 +10,9 @@ import time
 import sys
 from pathlib import Path
 
+startupinfo = subprocess.STARTUPINFO()
+startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+
 base_img = False
 temp_middle = [0, 0]
 data = False
@@ -193,6 +196,7 @@ def my_path():
     else:
         return Path(sys.argv[0]).resolve().parent
 
+
 def load_data():
     global data
     try:
@@ -262,10 +266,11 @@ def calculate_img_conversion():
 
 
 # converts image to wallpaper
-def convert_wallpaper(src, info_txt=False, filename=False):
-    out_path = os.path.dirname(src) + "/converted85_" + os.path.basename(src).split(".")[0]
+def convert_wallpaper(src, info_txt=False):
+    filename = os.path.basename(src)
+    out_path = os.path.dirname(src) + "/converted85_" + filename[: filename.rfind(".")]
     print(os.path.basename(src))
-    video = "mp4" in src[src.rfind("."):].lower()
+    video = "mp4" in src[src.rfind(".") :].lower()
 
     calculate_img_conversion()
     global data
@@ -330,7 +335,7 @@ def convert_wallpaper(src, info_txt=False, filename=False):
             )
             last = f"m{id}m"
 
-        cmd += f"\" -map \"[{last}]:v\" {"-map 1:a " if has_audio else ""}-c:v libx264 -pix_fmt yuv420p -c:a copy \"{out_path}\" -y"
+        cmd += f"\" -map \"[{last}]:v\" {"-map 1:a " if has_audio else ""} -pix_fmt yuv420p -c:a copy \"{out_path}\" -y"
 
         fps, div = fps.split('/')
         fps = int(fps) / int(div)
@@ -340,7 +345,15 @@ def convert_wallpaper(src, info_txt=False, filename=False):
         eta = []
 
         # executing the command and checking progress
-        process = subprocess.Popen(cmd, stderr=subprocess.PIPE, universal_newlines=True, bufsize=1)
+        process = subprocess.Popen(
+            cmd,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+            bufsize=1,
+            startupinfo=startupinfo,
+            creationflags=subprocess.CREATE_NO_WINDOW,
+            shell=True,
+        )
         for line in process.stderr:
             fps_match = fps_pattern.search(line)
             if not fps_match:

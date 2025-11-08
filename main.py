@@ -4,6 +4,7 @@ import scripts.setuptools as s
 import scripts.multiplatform as m
 from tkinter import Tk, Frame, Label, Button, mainloop, DISABLED, NORMAL, messagebox
 import sys
+import webbrowser
 
 
 def info_txt(txt, show_resolution=True):
@@ -72,7 +73,7 @@ def set_wallpaper(file_path=False):
     info_txt("processing..\n" + filename)
 
     try:
-        video, path = w.convert_wallpaper(file_path, info_txt, filename)
+        video, path = w.convert_wallpaper(file_path, info_txt)
         setup_btn.config(state=NORMAL)
         wallpaper_btn.config(state=NORMAL)
     except:
@@ -96,10 +97,15 @@ def set_wallpaper(file_path=False):
 
 
 root = Tk()
+root.iconbitmap(s.resource_path("assets/icon.ico"))
 root.geometry("350x150")
 root.title("k85 wallpaper tool")
 root.resizable(False, False)
 root.option_add("*Font", "Arial 14")
+
+donate_link = Label(root, text="Donate", fg="#4305af", cursor="hand2", font=("TkDefaultFont", 12, "underline"))
+donate_link.bind("<Button-1>", lambda e: webbrowser.open("https://kisielo85.github.io/donate"))
+donate_link.place(relx=1.0, rely=1.0, anchor="se", x=-8, y=-10)
 
 info_label = Label(
     root,

@@ -1,4 +1,7 @@
-# k85 wallpaper tool
+<h1 align="center">k85 wallpaper tool</h1>
+<p align="center">
+   <img src="assets/icon.png" width="250" title="logo">
+</p>
 
 If you ever wanted to set a wallpaper that would span across multiple monitors, you probably know how hard it is to make it look seamless. That's where this tool comes in handy. After a quick and easy setup, it calculates the differences in display sizes and the gaps between them, allowing you to set a perfectly aligned wallpaper.
 
@@ -25,7 +28,7 @@ The setup works by displaying lines that the user manually aligns. This only nee
 | [image1](https://www.reddit.com/media?url=https%3A%2F%2Fi.redd.it%2Fg9mkm42rvu0b1.jpg)                 | [kvacm](https://www.instagram.com/kvacm)                         |
 | [image2](https://www.freepik.com/free-vector/night-ocean-landscape-full-moon-stars-shine_17740155.htm) | [BGMotion_Utube](https://www.youtube.com/@BGMotion_Utube/videos) |
 | [image3](https://www.behance.net/gallery/48555649/80s-Pantera)                                         | [DTM_Illustration](https://www.behance.net/deto)                 |
-| [image4](https://www.pixiv.net/en/artworks/84466005)                                                   | [KRYP_132](https://www.pixiv.net/en/users/16096005)           |
+| [image4](https://www.pixiv.net/en/artworks/84466005)                                                   | [KRYP_132](https://www.pixiv.net/en/users/16096005)              |
 
 Compatible with:
 
@@ -62,9 +65,10 @@ on other enviroments you're gonna have to manually set wallpaper mode to "spanne
    pip install -r requirements.txt
    ```
 5. Run script
-   ```bash
+   ```cmd
    py main.py
    ```
+
 </details>
 
 <details>
@@ -93,4 +97,36 @@ on other enviroments you're gonna have to manually set wallpaper mode to "spanne
    ```bash
    python3 main.py
    ```
+
 </details>
+
+## Animated wallpapers
+
+.mp4 files can be converted the same way as images, but to use them you're gonna need [Wallpaper Engine](https://www.wallpaperengine.io) or something similar.
+
+1. First - make sure you have [ffmpeg](https://ffmpeg.org/) installed.<br>
+The quickest way to set it up is via command line
+   * Windows:
+      ```cmd
+      winget install ffmpeg
+      ```
+
+   * Linux:
+      ```bash
+      sudo apt install ffmpeg
+      ```
+
+2. Make sure to select a wallpaper that's marked as "Video"
+   ![wallpaper marked as Video](assets/github_img/mp4_1.png)
+   <br>
+
+3. Find the .mp4 file and open it in k85-wallpaper-tool
+   ![finding .mp4 file](assets/github_img/mp4_2.png)
+   <br>
+
+4. After conversion a new file will be created, drag and drop it back into Wallpaper Engine
+   ![importing converted .mp4 file](assets/github_img/mp4_3.png)
+   <br>
+
+5. Set the display mode to "stretch"
+   ![settig display mode to "strech"](assets/github_img/mp4_4.png)
