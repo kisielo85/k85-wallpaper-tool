@@ -1,6 +1,11 @@
 <h1 align="center">k85 wallpaper tool</h1>
 <p align="center">
-   <img src="assets/github_img/logo.png" width="250" title="logo">
+   <img src="assets/github_img/logo.png" width="250" title="logo"><br>
+</p>
+
+<p align="center">
+   <a href="#Installation">[Installation]</a>&ensp;&ensp;
+   <a href="#Animated-wallpapers">[Animated wallpapers]</a>
 </p>
 
 If you ever wanted to set a wallpaper that would span across multiple monitors, you probably know how hard it is to make it look seamless. That's where this tool comes in handy. After a quick and easy setup, it calculates the differences in display sizes and the gaps between them, allowing you to set a perfectly aligned wallpaper.
