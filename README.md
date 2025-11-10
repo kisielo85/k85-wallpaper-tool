@@ -4,6 +4,7 @@
 </p>
 
 <p align="center">
+    <a href="https://youtu.be/jhzmMiHzoTw">[Video Tutorial]</a>&ensp;&ensp;
    <a href="#Installation">[Installation]</a>&ensp;&ensp;
    <a href="#Animated-wallpapers">[Animated wallpapers]</a>
 </p>
@@ -41,6 +42,10 @@ Compatible with:
 * Linux Gnome / Cinnamon / Mate
 
 on other enviroments you're gonna have to manually set wallpaper mode to "spanned" and use the created .png file
+
+## Video Tutorial
+
+[![Video Tutorial](https://img.youtube.com/vi/jhzmMiHzoTw/0.jpg)](https://www.youtube.com/watch?v=jhzmMiHzoTw)
 
 ## Installation
 
