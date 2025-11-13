@@ -1,2 +1,2 @@
 set /p v=version: v
-pyinstaller --onefile --icon=assets/icon.ico --name="k85.wallpaper.tool.v%v%" --add-data "assets/*_img.png:assets" --add-data "assets/icon.ico:assets" --noconfirm --noconsole main.py
+pyinstaller --onefile --icon=assets/icon.ico --name="k85.wallpaper.tool.v%v%" --add-data "assets/*_img.png:assets" --add-data "assets/icon.ico:assets" --collect-all tkinterdnd2 --noconfirm --noconsole main.py

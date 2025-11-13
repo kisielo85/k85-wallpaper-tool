@@ -123,10 +123,10 @@ def load_monitors():
         m.has_bind = True
 
         if (
-            (m2.pos.y < m.pos.y < m2.pos_end.y)
-            or (m2.pos.y < m.pos_end.y < m2.pos_end.y)
-            or (m.pos.y < m2.pos.y < m.pos_end.y)
-            or (m.pos.y < m2.pos_end.y < m.pos_end.y)
+            (m2.pos.y <= m.pos.y <= m2.pos_end.y)
+            or (m2.pos.y <= m.pos_end.y <= m2.pos_end.y)
+            or (m.pos.y <= m2.pos.y <= m.pos_end.y)
+            or (m.pos.y <= m2.pos_end.y <= m.pos_end.y)
         ):
             m.bind_horizontal = True
         else:

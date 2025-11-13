@@ -1,3 +1,4 @@
+tkinterdnd2
 screeninfo
 pillow
 pynput

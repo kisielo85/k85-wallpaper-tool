@@ -3,6 +3,7 @@ import scripts.wallpapertools as w
 import scripts.setuptools as s
 import scripts.multiplatform as m
 from tkinter import Tk, Frame, Label, Button, mainloop, DISABLED, NORMAL, messagebox, PhotoImage
+from tkinterdnd2 import DND_FILES, TkinterDnD
 import sys
 import webbrowser
 
@@ -96,11 +97,20 @@ def set_wallpaper(file_path=False):
     return True
 
 
-root = Tk()
+root = TkinterDnD.Tk()
 if sys.platform.startswith("win"):
     root.iconbitmap(s.resource_path("assets/icon.ico"))
 else:
     root.iconphoto(False, PhotoImage(file=s.resource_path("assets/icon.png")))
+
+
+def on_drop(event):
+    if wallpaper_btn.cget("state") == "normal":
+        set_wallpaper(event.data)
+
+
+root.drop_target_register(DND_FILES)
+root.dnd_bind('<<Drop>>', on_drop)
 
 root.geometry("400x150")
 root.title("k85 wallpaper tool")
