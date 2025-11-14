@@ -2,7 +2,7 @@ import os
 import scripts.wallpapertools as w
 import scripts.setuptools as s
 import scripts.multiplatform as m
-from tkinter import Tk, Frame, Label, Button, mainloop, DISABLED, NORMAL, messagebox, PhotoImage
+from tkinter import Frame, Label, Button, mainloop, DISABLED, NORMAL, messagebox, PhotoImage
 from tkinterdnd2 import DND_FILES, TkinterDnD
 import sys
 import webbrowser
@@ -112,12 +112,27 @@ def on_drop(event):
 root.drop_target_register(DND_FILES)
 root.dnd_bind('<<Drop>>', on_drop)
 
+if m.has_dark_theme():
+    bg = "#262626"
+    fg = "#f0f0f0"
+    link = "#a377f0"
+else:
+    bg = "#f0f0f0"
+    fg = "#000000"
+    link = "#4305af"
+
+root.option_add("*Background", bg)
+root.option_add("*Foreground", fg)
+root.option_add("*activeBackground", bg)
+root.option_add("*activeForeground", fg)
+root.configure(bg=bg)
+
 root.geometry("400x150")
 root.title("k85 wallpaper tool")
 root.resizable(False, False)
 root.option_add("*Font", "Arial 14")
 
-donate_link = Label(root, text="Donate", fg="#4305af", cursor="hand2", font=("Arial", 12, "underline"))
+donate_link = Label(root, text="Donate", fg=link, cursor="hand2", font=("Arial", 12, "underline"))
 donate_link.bind("<Button-1>", lambda e: webbrowser.open("https://kisielo85.github.io/donate"))
 donate_link.place(relx=1.0, rely=1.0, anchor="se", x=-8, y=-10)
 

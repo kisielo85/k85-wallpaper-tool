@@ -37,6 +37,7 @@ def set_wallpaper(image_path = "wallpaper.png"):
     
     elif "gnome" in desktop_env:
         os.system(f'gsettings set org.gnome.desktop.background picture-uri "file://{image_path}"')
+        os.system(f'gsettings set org.gnome.desktop.background picture-uri-dark "file://{image_path}"')
 
     elif "cinnamon" in desktop_env:
         os.system(f'gsettings set org.cinnamon.desktop.background picture-uri "file://{image_path}"')
@@ -61,3 +62,25 @@ def get_file():
         case _:
             print("not supported:", system)
             return False
+
+
+def has_dark_theme():
+    if desktop_env == "Windows":
+        import winreg
+
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize") as key:
+            value, _ = winreg.QueryValueEx(key, "AppsUseLightTheme")
+            return value == 0
+    
+    elif "gnome" in desktop_env:
+        return 'dark' in os.popen(f'gsettings get org.gnome.desktop.interface color-scheme').read().lower()
+
+    elif "cinnamon" in desktop_env:
+        return 'dark' in os.popen(f'gsettings get org.cinnamon.desktop.interface gtk-theme').read().lower()
+
+    elif "mate" in desktop_env:
+        return 'dark' in os.popen(f'gsettings get org.mate.interface gtk-theme').read().lower()
+
+    else:
+        print("not supported:", system, desktop_env)
+        return False
