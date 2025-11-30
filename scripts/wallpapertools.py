@@ -334,11 +334,11 @@ def convert_wallpaper(src, info_txt=False):
             m = data['monitors'][id]
             cmd += f"[1:v]crop={to_x-from_x}:{to_y-from_y}:{from_x}:{from_y},"
             cmd += (
-                f"scale={m.width}:{m.height}[m{id}];[{last}][m{id}]overlay={m.pos.x}:{m.pos.y}[m{id}m];"
+                f"scale={m.width}:{m.height},format=yuv444p[m{id}];[{last}][m{id}]overlay={m.pos.x}:{m.pos.y}[m{id}m];"
             )
             last = f"m{id}m"
 
-        cmd += f"\" -map \"[{last}]:v\" {"-map 1:a " if has_audio else ""} -pix_fmt yuv420p -c:a copy \"{out_path}\" -y"
+        cmd += f"\" -map \"[{last}]:v\" {"-map 1:a " if has_audio else ""} -pix_fmt yuv444p -c:a copy \"{out_path}\" -y"
 
         fps, div = fps.split('/')
         fps = int(fps) / int(div)

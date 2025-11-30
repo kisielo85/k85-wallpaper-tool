@@ -1,4 +1,5 @@
 tkinterdnd2
+tkinter-tooltip
 screeninfo
 pillow
 pynput
