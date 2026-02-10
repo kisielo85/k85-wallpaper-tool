@@ -18,7 +18,8 @@ else:
 
 base_img = False
 temp_middle = [0, 0]
-data = False
+data = {"layouts": {}, "current_layout": "", "multiple_layouts": False, "theme": "dark"}
+layout_data = None
 
 
 @dataclass
@@ -50,11 +51,11 @@ class Monitor:
 
 # returns id of the closest display with/without a bind
 def get_closest(id, bind=True):
-    center = data['monitors'][id].center.arr()
+    center = layout_data['monitors'][id].center.arr()
 
     closest = False
     closest_id = -1
-    for m in data['monitors']:
+    for m in layout_data['monitors']:
         if m.has_bind != bind or m.id == id:
             continue
         dist = math.dist(center, m.center.arr())
@@ -68,8 +69,17 @@ def get_closest(id, bind=True):
 
 # saves all important stuff to data variable
 def load_monitors():
-    global data
-    data = {'monitors': []}
+    global data, layout_data
+
+    id = get_layout_id()
+
+    if not data['multiple_layouts']:
+        data['layouts'] = {}
+    if not id in data['layouts']:
+        data['layouts'][id] = {}
+    layout_data = data['layouts'][id]
+    layout_data['monitors'] = []
+    data['current_layout'] = id
 
     monitors = get_monitors()
     min_x = max_x = min_y = max_y = 0
@@ -86,7 +96,7 @@ def load_monitors():
         if m.is_primary:
             primary_id = i
 
-        data['monitors'].append(
+        layout_data['monitors'].append(
             Monitor(
                 id=i,
                 pos=Position(m.x, m.y),
@@ -100,16 +110,16 @@ def load_monitors():
         )
 
     # modify coordinates for easier canvas usage
-    for i, m in enumerate(data['monitors']):
+    for i, m in enumerate(layout_data['monitors']):
         m.pos.x -= min_x
         m.pos.y -= min_y
         m.pos_end = Position(m.pos.x + m.width - 1, m.pos.y + m.height - 1)
         m.center.x = m.pos.x + m.width // 2
         m.center.y = m.pos.y + m.height // 2
 
-    data['min_pos'] = (min_x, min_y)
-    data['canvas_size'] = (max_x - min_x, max_y - min_y)
-    data['setup_order'] = []
+    layout_data['min_pos'] = (min_x, min_y)
+    layout_data['canvas_size'] = (max_x - min_x, max_y - min_y)
+    layout_data['setup_order'] = []
 
     # order in which monitors will be configured
     while True:
@@ -117,8 +127,8 @@ def load_monitors():
         if m_id == -1:
             break
 
-        m = data['monitors'][m_id]
-        m2 = data['monitors'][get_closest(m_id, True)]
+        m = layout_data['monitors'][m_id]
+        m2 = layout_data['monitors'][get_closest(m_id, True)]
         m.bind_to = m2.id
         m.has_bind = True
 
@@ -132,15 +142,17 @@ def load_monitors():
         else:
             m.bind_horizontal = False
 
-        data['setup_order'].append([m.id, m2.id])
+        layout_data['setup_order'].append([m.id, m2.id])
+    verify_data(data)
 
 
 # process and save data from scale setup
 def calculate_scale(s, lines):
-    global data
+    global layout_data
     global temp_middle
-    m1 = data['monitors'][s[0]]
-    m2 = data['monitors'][s[1]]
+
+    m1 = layout_data['monitors'][s[0]]
+    m2 = layout_data['monitors'][s[1]]
 
     if (m1.bind_horizontal and m1.pos.x > m2.pos.x) or (not m1.bind_horizontal and m1.pos.y > m2.pos.y):
         lines[3], lines[1], lines[2], lines[0] = lines[2], lines[0], lines[3], lines[1]
@@ -158,8 +170,8 @@ def calculate_scale(s, lines):
 # save data from gap setup
 def save_gap(s, gap):
     global data
-    m1 = data['monitors'][s[0]]
-    m2 = data['monitors'][s[1]]
+    m1 = layout_data['monitors'][s[0]]
+    m2 = layout_data['monitors'][s[1]]
 
     m1.gap = gap
 
@@ -176,19 +188,19 @@ def save_gap(s, gap):
 
 
 def verify_data(d):
-    if (
-        'canvas_size' not in d
-        or 'setup_order' not in d
-        or 'monitors' not in d
-        or 'img_rectangles' not in d
-        or 'img_size' not in d
-        or 'min_pos' not in d
-    ):
+    if 'layouts' not in d or 'current_layout' not in d:
         return False
 
-    for m in d['monitors']:
-        if not m.has_bind:
+    for l in d['layouts'].values():
+        if 'monitors' not in l:
             return False
+        for m in l['monitors']:
+            if not m.has_bind:
+                return False
+
+    # default settings
+    d.setdefault('multiple_layouts', False)
+    d['theme'] = data['theme']
 
     return True
 
@@ -200,14 +212,32 @@ def my_path():
         return Path(sys.argv[0]).resolve().parent
 
 
+def get_layout_id():
+    id = []
+    for m in get_monitors():
+        id.append(f"{m.x}.{m.y}-{m.width}x{m.height}")
+    return "_".join(id)
+
+
 def load_data():
-    global data
+    global data, layout_data
+    id = get_layout_id()
     try:
         with open(f"{my_path()}/k85WallpaperToolConfig.pkl", "rb") as f:
             d = pickle.load(f)
-        if verify_data(d):
-            data = d
-            return True
+
+        if not verify_data(d):
+            load_monitors()
+            return False
+
+        data = d
+        if id not in data['layouts']:
+            load_monitors()
+            return False
+        else:
+            data['current_layout'] = id
+            layout_data= data['layouts'][id]
+        return True
     except:
         pass
 
@@ -228,7 +258,7 @@ def calculate_img_conversion():
     min_x = min_y = 0
 
     # get primary monitor first, at cords 0, 0
-    for m in data['monitors']:
+    for m in layout_data['monitors']:
         if m.primary:
             rect[m.id] = {
                 'from': [0, 0],
@@ -237,9 +267,9 @@ def calculate_img_conversion():
             break
 
     # calculate screen positions and sizes
-    for o in data['setup_order']:
-        m1 = data['monitors'][o[0]]
-        m2 = data['monitors'][o[1]]
+    for o in layout_data['setup_order']:
+        m1 = layout_data['monitors'][o[0]]
+        m2 = layout_data['monitors'][o[1]]
 
         pos = rect[m2.id]['from'].copy()
         pos[0] += m1.relative_x
@@ -264,20 +294,19 @@ def calculate_img_conversion():
             max_x = max(max_x, rect[r][point][0])
             max_y = max(max_y, rect[r][point][1])
 
-    data['img_rectangles'] = rect
-    data['img_size'] = [max_x, max_y]
+    layout_data['img_rectangles'] = rect
+    layout_data['img_size'] = [max_x, max_y]
 
 
 # converts image to wallpaper
 def convert_wallpaper(src, info_txt=False):
     filename = os.path.basename(src)
     out_path = os.path.dirname(src) + "/converted85_" + filename[: filename.rfind(".")]
-    print(os.path.basename(src))
     video = "mp4" in src[src.rfind(".") :].lower()
 
     calculate_img_conversion()
     global data
-    rect = data['img_rectangles']
+    rect = layout_data['img_rectangles']
     save_data()
 
     if video:  # get source mp4 data: duration, fps, resolution
@@ -307,9 +336,9 @@ def convert_wallpaper(src, info_txt=False):
         out_path += ".png"
         source_img = Image.open(src)
         src_x, src_y = source_img.size
-        base_img = Image.new('RGB', data['canvas_size'])
+        base_img = Image.new('RGB', layout_data['canvas_size'])
 
-    screen_x, screen_y = data['img_size'][0], data['img_size'][1]
+    screen_x, screen_y = layout_data['img_size'][0], layout_data['img_size'][1]
 
     offset_x = 0
     offset_y = 0
@@ -322,7 +351,7 @@ def convert_wallpaper(src, info_txt=False):
         offset_x = (src_x - screen_x * img_scale) // 2
 
     if video:  # preparing the ffmpeg command
-        cmd = f"ffmpeg -f lavfi -i color=c=black:s={data['canvas_size'][0]}x{data['canvas_size'][1]}:r={fps}:d={duration}"
+        cmd = f"ffmpeg -f lavfi -i color=c=black:s={layout_data['canvas_size'][0]}x{layout_data['canvas_size'][1]}:r={fps}:d={duration}"
         cmd += f" -i \"{src}\" -filter_complex \""
         last = "0:v"
 
@@ -331,14 +360,14 @@ def convert_wallpaper(src, info_txt=False):
             from_y = int(r['from'][1] * img_scale + offset_y)
             to_x = int(r['to'][0] * img_scale + offset_x)
             to_y = int(r['to'][1] * img_scale + offset_y)
-            m = data['monitors'][id]
+            m = layout_data['monitors'][id]
             cmd += f"[1:v]crop={to_x-from_x}:{to_y-from_y}:{from_x}:{from_y},"
             cmd += (
-                f"scale={m.width}:{m.height}[m{id}];[{last}][m{id}]overlay={m.pos.x}:{m.pos.y}[m{id}m];"
+                f"scale={m.width}:{m.height},format=yuv444p[m{id}];[{last}][m{id}]overlay={m.pos.x}:{m.pos.y}[m{id}m];"
             )
             last = f"m{id}m"
 
-        cmd += f"\" -map \"[{last}]:v\" {"-map 1:a " if has_audio else ""} -pix_fmt yuv420p -c:a copy \"{out_path}\" -y"
+        cmd += f"\" -map \"[{last}]:v\" {"-map 1:a " if has_audio else ""} -pix_fmt yuv444p -c:a copy \"{out_path}\" -y"
 
         fps, div = fps.split('/')
         fps = int(fps) / int(div)
@@ -387,7 +416,7 @@ def convert_wallpaper(src, info_txt=False):
                 int(r['to'][0] * img_scale + offset_x),
                 int(r['to'][1] * img_scale + offset_y),
             )
-            m = data['monitors'][id]
+            m = layout_data['monitors'][id]
 
             # copy area from source image and paste onto new wallpaper
             screen_img = source_img.crop(crop_area).resize((m.width, m.height), Image.LANCZOS)
