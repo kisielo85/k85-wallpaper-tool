@@ -1,4 +1,9 @@
 <h1 align="center">k85 wallpaper tool</h1>
+
+This project is no longer maintained, I no longer plan to work on k85WallpaperTool.<br><br>
+If anyone is interested in taking over the project - there are some great feature ideas in on the [Issues](https://github.com/kisielo85/k85-wallpaper-tool/issues) page.<br>
+I'll be happy to answer any questions you may have about the code, just DM me on discord: [@kisielo85](https://discord.com/users/430039581908271104/)
+
 <p align="center">
    <img src="assets/github_img/logo.png" width="250" title="logo"><br>
 </p>

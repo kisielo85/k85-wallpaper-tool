@@ -181,7 +181,7 @@ wallpaper_btn = Button(btn_frame, text="set wallpaper", command=set_wallpaper, s
 wallpaper_btn.pack(side="right", padx=5)
 
 donate_link = Label(root, text="Donate", fg=link, cursor="hand2", font=("Arial", 12, "underline"))
-donate_link.bind("<Button-1>", lambda: webbrowser.open("https://kisielo85.github.io/donate"))
+donate_link.bind("<Button-1>", lambda event: webbrowser.open("https://kisielo85.github.io/donate"))
 donate_link.place(relx=1.0, rely=1.0, anchor="se", x=-8, y=-10)
 
 
