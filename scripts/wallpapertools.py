@@ -82,12 +82,14 @@ def load_monitors():
     data['current_layout'] = id
 
     monitors = get_monitors()
-    max_x = max_y = 0
+    min_x = max_x = min_y = max_y = 0
     primary_id = 0
 
     # getting display data
     for i, m in enumerate(monitors):
-        # largest cords - used to calculate canvas size
+        # smallest and largest cords - used to calculate canvas size
+        min_x = min(min_x, m.x)
+        min_y = min(min_y, m.y)
         max_x = max(max_x, m.x + m.width)
         max_y = max(max_y, m.y + m.height)
 
@@ -98,16 +100,25 @@ def load_monitors():
             Monitor(
                 id=i,
                 pos=Position(m.x, m.y),
-                pos_end=Position(m.x + m.width - 1, m.y + m.height - 1),
+                pos_end=Position(0, 0),
                 height=m.height,
                 width=m.width,
                 primary=m.is_primary,
                 has_bind=m.is_primary,
-                center=Position(m.x + m.width // 2, m.y + m.height // 2),
+                center=Position(0, 0),
             )
         )
-    
-    layout_data['canvas_size'] = (max_x, max_y)
+
+    # modify coordinates for easier canvas usage
+    for i, m in enumerate(layout_data['monitors']):
+        m.pos.x -= min_x
+        m.pos.y -= min_y
+        m.pos_end = Position(m.pos.x + m.width - 1, m.pos.y + m.height - 1)
+        m.center.x = m.pos.x + m.width // 2
+        m.center.y = m.pos.y + m.height // 2
+
+    layout_data['min_pos'] = (min_x, min_y)
+    layout_data['canvas_size'] = (max_x - min_x, max_y - min_y)
     layout_data['setup_order'] = []
 
     # order in which monitors will be configured

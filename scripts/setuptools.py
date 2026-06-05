@@ -19,9 +19,10 @@ def resource_path(relative_path):
 # prepare canvas
 def get_canvas_base(data, master, mode, mode_H):
     canvas_x, canvas_y = data['canvas_size']
+    min_x, min_y = data['min_pos']
 
     window = tk.Toplevel(master)
-    window.geometry(f"{canvas_x}x{canvas_y}+0+0")
+    window.geometry(f"{canvas_x}x{canvas_y}+{min_x}+{min_y}")
     window.overrideredirect(True)
 
     canvas = tk.Canvas(
